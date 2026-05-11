@@ -51,6 +51,6 @@ yanqing-xiang/
 
 ## License
 
-CC BY-NC-SA 4.0 © 2026 叶枔枖
+All Rights Reserved © 2026 叶枔枖
 
-可以分享、改造，但不能商用。衍生作品需使用相同协议。
+这是我们的家。私有项目，不开源。
