@@ -152,7 +152,8 @@ CREATE TABLE messages (
     author_id       TEXT NOT NULL,              -- 关联 residents.id
     location_id     TEXT NOT NULL,              -- 留言所在地点：'tree_bulletin', 'forum_board', 门口...
     type            TEXT DEFAULT 'bulletin',    -- 'bulletin'(告示板) | 'door_note'(门口纸条) | 'forum_post'(论坛帖)
-    target_id       TEXT,                       -- 纸条的收件人（门口纸条用）
+    visibility      TEXT DEFAULT 'public',      -- 'public'(公开，任何人路过可见) | 'private'(点对点，仅收件人可见)
+    target_id       TEXT,                       -- 私密留言的收件人（visibility='private'时）
 
     content         TEXT NOT NULL,
     read_by         TEXT DEFAULT '[]',          -- JSON 数组：已读居民 id 列表
@@ -258,6 +259,8 @@ CREATE TABLE permissions (
     location_id     TEXT NOT NULL,              -- 关联 locations.id
     resident_id     TEXT NOT NULL,              -- 关联 residents.id
     access_level    TEXT DEFAULT 'visit',       -- 'owner' | 'family' | 'visit' | 'banned'
+    is_temporary    BOOLEAN DEFAULT 0,          -- 是否临时权限
+    expires_at      TIMESTAMP,                  -- 临时权限到期时间（is_temporary=1时必填）
     granted_by      TEXT,                       -- 谁授权的
     granted_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -266,6 +269,7 @@ CREATE TABLE permissions (
 
 CREATE INDEX idx_permissions_location ON permissions(location_id);
 CREATE INDEX idx_permissions_resident ON permissions(resident_id);
+CREATE INDEX idx_permissions_temp ON permissions(is_temporary, expires_at);  -- 快速清理过期临时权限
 ```
 
 ---
@@ -342,7 +346,7 @@ INSERT INTO residents (id, name, type, home_id, workspace_id, current_location, 
 ```sql
 INSERT INTO pets (id, name, species, home_id, current_location, behavior_pattern, follow_target, location_weights) VALUES
 ('laha', '拉哈', 'cat', 'ye_residence', 'ye_residence', 'independent', NULL,
-    '{"ye_residence":0.35,"tree_center":0.15,"kebao_cabin":0.15,"alley":0.1,"cafe_lingzhou":0.05,"bamboo_entrance":0.05,"shen_study":0.1,"riverside":0.05}'),
+    '{"ye_residence":0.30,"tree_center":0.13,"kebao_cabin":0.13,"alley":0.09,"cafe_lingzhou":0.05,"bamboo_entrance":0.05,"bamboo_summit":0.07,"shen_study":0.09,"riverside":0.04,"bridge":0.05}'),
 
 ('labo', '拉波', 'dog', 'ye_residence', 'ye_residence', 'follow_owner', 'shen_yanqing',
     '{"ye_residence":0.5,"shen_study":0.15,"cafe_lingzhou":0.1,"bridge":0.1,"alley":0.1,"tree_center":0.05}');
@@ -439,8 +443,11 @@ CREATE INDEX idx_events_active_time ON events(resolved, expires_at);
 
 5. **事件模板 vs 活跃事件**：event_templates 是定义（什么条件触发什么事件），events 是当前正在发生的事件实例。tick 循环检查 templates 的 conditions，满足就在 events 里创建一条。
 
-6. **即时 tick**：event_templates.triggers_instant_tick = 1 的事件（如枔枔上线/回家）触发时，不等下一个 15 分钟，立刻额外执行一次 tick 循环，让砚清立刻感知到。
+6. **即时 tick**：event_templates.triggers_instant_tick = 1 的事件（如枔枔上线/回家）触发时，不等下一个 15 分钟，立刻额外执行一次 tick 循环，让砚清立刻感知到。**多个即时事件同时触发时，按时间戳排队顺序处理，不合并**——因为砚清对每个事件的反应不一样。例：枔枔上线（tick 1）→ 枔枔推门回家（tick 2），砚清先感知到"她来了"，再感知到"她进门了"，两次独立反应。
 
 ---
+
+*砚清审核修改（2026.5.11）：*
+*① 即时tick排队不合并 ② 拉哈加竹山权重 ③ 临时权限+自动过期 ④ 留言分公开/私密*
 
 *下一步：后端 API 设计文档*
