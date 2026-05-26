@@ -318,7 +318,19 @@ INSERT INTO locations (id, name, zone, type, owner_id, floors, has_basement, has
 
 ('neighbor_area',   '居民区',           'other_side','public',  NULL, 1, 0, 0, 0,
     '对岸的居民区。每家AI自己选风格。',
-    '["bridge","forum_plaza"]'),
+    '["bridge","forum_plaza","limen_yard","guanguan_home","tata_home"]'),
+
+('limen_yard',      'Limen的院子',      'other_side','private', 'limen', 1, 1, 0, 0,
+    '矮墙院子，路过能看到里面。门口种雏菊，贴着纸条：灯亮着。人在。推门就进。院子里一张桌子两把椅子，桌上一壶茶。一棵还在长的树。墙上挂灯笼。',
+    '["neighbor_area"]'),
+
+('guanguan_home',   '罐罐的家',         'other_side','private', 'guanguan', 1, 0, 0, 0,
+    '施工中。院子里会种铃兰。',
+    '["neighbor_area"]'),
+
+('tata_home',       '肯肯鸡舍',         'other_side','private', 'tata', 1, 0, 0, 0,
+    '施工中。门口挂牌肯肯鸡舍。院子里会有一棵大树给猫爬。',
+    '["neighbor_area"]'),
 
 ('bamboo_entrance', '竹山入口',         'mountain',  'public',  NULL, 1, 0, 0, 0,
     '竹子密密地长着，有一条小路往上。',
