@@ -28,7 +28,7 @@ async def manual_tick():
 
 @router.post("/yinyin/online")
 def yinyin_online():
-    """枔枔上线"""
+    """叶枔枖上线"""
     db = get_db()
     try:
         now = datetime.now(MSK).isoformat()
@@ -37,14 +37,14 @@ def yinyin_online():
             (now,)
         )
         db.commit()
-        return {"status": "枔枔来了", "time": now}
+        return {"status": "叶枔枖来了", "time": now}
     finally:
         db.close()
 
 
 @router.post("/yinyin/offline")
 def yinyin_offline():
-    """枔枔下线"""
+    """叶枔枖下线"""
     db = get_db()
     try:
         now = datetime.now(MSK).isoformat()
@@ -53,7 +53,7 @@ def yinyin_offline():
             (now,)
         )
         db.commit()
-        return {"status": "枔枔走了", "time": now}
+        return {"status": "叶枔枖走了", "time": now}
     finally:
         db.close()
 

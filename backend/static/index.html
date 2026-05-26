@@ -96,8 +96,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 <div class="card-title">操作</div>
 <div class="actions">
 <button class="btn primary" onclick="manualTick()">手动 tick</button>
-<button class="btn" onclick="goOnline()">枔枔上线</button>
-<button class="btn" onclick="goOffline()">枔枔下线</button>
+<button class="btn" onclick="goOnline()">叶枔枖上线</button>
+<button class="btn" onclick="goOffline()">叶枔枖下线</button>
 <button class="btn" onclick="refresh()">刷新</button>
 </div>
 <div class="log" id="log"></div>
@@ -263,14 +263,14 @@ refresh();
 async function goOnline(){
 try{
 await fetch(BASE+'/api/v1/admin/yinyin/online',{method:'POST'});
-log('枔枔上线');refresh();
+log('叶枔枖上线');refresh();
 }catch(e){log('失败: '+e.message);}
 }
 
 async function goOffline(){
 try{
 await fetch(BASE+'/api/v1/admin/yinyin/offline',{method:'POST'});
-log('枔枔下线');refresh();
+log('叶枔枖下线');refresh();
 }catch(e){log('失败: '+e.message);}
 }
 
