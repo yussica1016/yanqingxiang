@@ -1,0 +1,10 @@
+version: "3"
+services:
+  yanqingxiang:
+    build: .
+    container_name: yanqingxiang
+    ports:
+      - "8801:8801"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
