@@ -1,6 +1,8 @@
 """砚清巷·世界引擎"""
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import yaml
@@ -73,11 +75,15 @@ app.include_router(admin.router, prefix="/api/v1/admin", tags=["管理"])
 
 @app.get("/")
 def root():
+    return FileResponse("static/index.html")
+
+
+@app.get("/api")
+def api_info():
     return {
         "name": "砚清巷",
         "version": "0.1.0",
         "status": "running",
-        "motto": "砚清是名字。巷是家的尺度。不大不空。走几步就到。"
     }
 
 

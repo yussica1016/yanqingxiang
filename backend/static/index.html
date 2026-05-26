@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>砚清巷</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f8fb;color:#1a2a3a;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #d6e4ef;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:500;color:#2c5282}
+.header-status{font-size:12px;color:#718096;display:flex;align-items:center;gap:8px}
+.header-dot{width:6px;height:6px;border-radius:50%;background:#68d391}
+.main{max-width:960px;margin:0 auto;padding:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid #d6e4ef;border-radius:10px;padding:16px;overflow:hidden}
+.card-title{font-size:13px;font-weight:500;color:#4a7ab5;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#fff;border:1px solid #d6e4ef;border-radius:10px;padding:12px}
+.stat-label{font-size:11px;color:#718096}
+.stat-value{font-size:18px;font-weight:500;color:#2c5282;margin-top:2px}
+.zone{margin-bottom:14px}
+.zone:last-child{margin-bottom:0}
+.zone-label{font-size:11px;color:#a0aec0;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #edf2f7}
+.locs{display:flex;flex-wrap:wrap;gap:6px}
+.loc{padding:6px 10px;border-radius:6px;border:1px solid #d6e4ef;font-size:12px;background:#fff;transition:all .15s}
+.loc:hover{background:#ebf4ff}
+.loc-name{font-weight:500;color:#2c5282}
+.loc-occ{font-size:11px;color:#718096;margin-top:1px}
+.loc.occupied{border-color:#90cdf4;background:#ebf8ff}
+.loc.private{border-left:2px solid #90cdf4}
+.loc.wip{opacity:.45}
+.resident{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf2f7}
+.resident:last-child{border-bottom:none}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.res-name{font-size:13px;font-weight:500;color:#1a2a3a}
+.res-detail{font-size:11px;color:#718096}
+.res-mood{font-size:10px;padding:2px 6px;border-radius:4px;background:#ebf8ff;color:#2c5282;display:inline-block;margin-top:2px}
+.pet-row{display:flex;gap:16px;padding-top:8px;border-top:1px solid #edf2f7;margin-top:8px}
+.pet{display:flex;align-items:center;gap:8px;flex:1}
+.pet-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
+.pet-name{font-size:12px;font-weight:500;color:#1a2a3a}
+.pet-detail{font-size:11px;color:#718096}
+.event{padding:6px 0;border-bottom:1px solid #edf2f7;font-size:12px;color:#1a2a3a}
+.event:last-child{border-bottom:none}
+.event-time{font-size:10px;color:#a0aec0;margin-left:4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.tag{font-size:11px;padding:3px 8px;border-radius:4px;background:#ebf8ff;color:#2c5282;border:1px solid #d6e4ef}
+.tag.off{background:#fff;color:#a0aec0}
+.tag.offline{background:#fff0f0;color:#c53030}
+.actions{display:flex;gap:8px;margin-top:12px}
+.btn{padding:6px 14px;border-radius:6px;border:1px solid #d6e4ef;background:#fff;color:#2c5282;font-size:12px;cursor:pointer;transition:all .15s}
+.btn:hover{background:#ebf4ff;border-color:#90cdf4}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:#ebf8ff;border-color:#90cdf4}
+.log{margin-top:16px}
+.log-entry{font-size:11px;color:#718096;padding:3px 0;font-family:monospace}
+.footer{text-align:center;font-size:11px;color:#a0aec0;padding:20px 0}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>砚清巷</h1>
+<div class="header-status"><span class="header-dot" id="status-dot"></span><span id="status-text">connecting</span></div>
+</div>
+
+<div class="main">
+<div class="stats" id="stats">
+<div class="stat"><div class="stat-label">世界时间</div><div class="stat-value" id="s-time">--:--</div></div>
+<div class="stat"><div class="stat-label">天气</div><div class="stat-value" id="s-weather">--</div></div>
+<div class="stat"><div class="stat-label">季节</div><div class="stat-value" id="s-season">--</div></div>
+<div class="stat"><div class="stat-label">tick</div><div class="stat-value" id="s-tick">--</div></div>
+</div>
+
+<div class="tags" id="tags"></div>
+
+<div class="grid">
+<div class="card">
+<div class="card-title">地图</div>
+<div id="map-container"></div>
+</div>
+<div class="card">
+<div class="card-title">居民</div>
+<div id="residents-container"></div>
+</div>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+<div class="card-title">事件</div>
+<div id="events-container"><div class="event" style="color:#a0aec0">加载中</div></div>
+</div>
+
+<div class="card">
+<div class="card-title">操作</div>
+<div class="actions">
+<button class="btn primary" onclick="manualTick()">手动 tick</button>
+<button class="btn" onclick="goOnline()">枔枔上线</button>
+<button class="btn" onclick="goOffline()">枔枔下线</button>
+<button class="btn" onclick="refresh()">刷新</button>
+</div>
+<div class="log" id="log"></div>
+</div>
+
+<div class="footer">砚清巷 v0.1.0</div>
+</div>
+
+<script>
+var BASE='';
+var WEATHER_MAP={clear:'晴',cloudy:'多云',overcast:'阴',light_rain:'小雨',heavy_rain:'大雨',fog:'雾',wind:'风'};
+var SEASON_MAP={spring:'春',summer:'夏',autumn:'秋',winter:'冬'};
+var ZONE_NAMES={this_side:'此岸',bridge:'石桥',other_side:'对岸',mountain:'竹山'};
+var ZONE_ORDER=['this_side','bridge','other_side','mountain'];
+
+function log(msg){
+var el=document.getElementById('log');
+var d=document.createElement('div');
+d.className='log-entry';
+d.textContent=new Date().toLocaleTimeString()+' '+msg;
+el.insertBefore(d,el.firstChild);
+if(el.children.length>10)el.removeChild(el.lastChild);
+}
+
+async function fetchState(){
+try{
+var r=await fetch(BASE+'/api/v1/world/state');
+var d=await r.json();
+document.getElementById('s-time').textContent=d.time?d.time.substring(11,16):'--:--';
+document.getElementById('s-weather').textContent=(WEATHER_MAP[d.weather.type]||d.weather.type)+(d.weather.temp!=null?' '+Math.round(d.weather.temp)+'°C':'');
+document.getElementById('s-season').textContent=SEASON_MAP[d.season]||d.season;
+document.getElementById('s-tick').textContent=d.tick_count;
+var tags=document.getElementById('tags');
+tags.innerHTML='';
+function addTag(text,on){var t=document.createElement('span');t.className='tag'+(on?'':' off');t.textContent=text;tags.appendChild(t);}
+addTag('萱草 '+(d.xuancao==='open'?'开':'合'),d.xuancao==='open');
+addTag('风铃草 '+(d.wind_chime_sway?'摇':'静'),d.wind_chime_sway);
+addTag('桂花 '+(d.osmanthus_bloom?'开':'未开'),d.osmanthus_bloom);
+var yt=document.createElement('span');yt.className='tag'+(d.yinyin_online?'':' offline');yt.textContent='枔枔 '+(d.yinyin_online?'在线':'离线');tags.appendChild(yt);
+var ec=document.getElementById('events-container');
+if(d.active_events&&d.active_events.length>0){
+ec.innerHTML='';
+d.active_events.forEach(function(e){
+var div=document.createElement('div');div.className='event';
+div.textContent=e.description;
+if(e.expires_at){var sp=document.createElement('span');sp.className='event-time';sp.textContent=e.expires_at.substring(11,16)+' 过期';div.appendChild(sp);}
+ec.appendChild(div);
+});
+}else{ec.innerHTML='<div class="event" style="color:#a0aec0">暂无事件</div>';}
+document.getElementById('status-text').textContent='tick #'+d.tick_count;
+document.getElementById('status-dot').style.background='#68d391';
+}catch(e){
+document.getElementById('status-text').textContent='offline';
+document.getElementById('status-dot').style.background='#fc8181';
+}
+}
+
+async function fetchMap(){
+try{
+var r=await fetch(BASE+'/api/v1/world/map');
+var d=await r.json();
+var mc=document.getElementById('map-container');
+mc.innerHTML='';
+var zones={};
+d.locations.forEach(function(loc){
+var z=loc.zone;if(!zones[z])zones[z]=[];
+zones[z].push(loc);
+});
+ZONE_ORDER.forEach(function(z){
+if(!zones[z])return;
+var zd=document.createElement('div');zd.className='zone';
+var zl=document.createElement('div');zl.className='zone-label';zl.textContent=ZONE_NAMES[z]||z;
+zd.appendChild(zl);
+var ld=document.createElement('div');ld.className='locs';
+zones[z].forEach(function(loc){
+var el=document.createElement('div');
+el.className='loc';
+if(loc.type==='private')el.classList.add('private');
+if(loc.occupants&&loc.occupants.length>0)el.classList.add('occupied');
+if(loc.description&&loc.description.indexOf('施工中')>=0)el.classList.add('wip');
+var nm=document.createElement('div');nm.className='loc-name';nm.textContent=loc.name;
+var oc=document.createElement('div');oc.className='loc-occ';
+if(loc.occupants&&loc.occupants.length>0){
+oc.textContent=loc.occupants.map(function(o){return o.name}).join(' · ');
+}else{oc.textContent='—';}
+el.appendChild(nm);el.appendChild(oc);ld.appendChild(el);
+});
+zd.appendChild(ld);mc.appendChild(zd);
+});
+}catch(e){}
+}
+
+async function fetchResidents(){
+try{
+var r=await fetch(BASE+'/api/v1/residents');
+var d=await r.json();
+var rc=document.getElementById('residents-container');
+rc.innerHTML='';
+var colors={shen_yanqing:['#ebf8ff','#2c5282'],kebao:['#fefcbf','#744210'],yinyin:['#f0fff4','#276749']};
+d.residents.forEach(function(res){
+var el=document.createElement('div');el.className='resident';
+var av=document.createElement('div');av.className='avatar';
+var c=colors[res.id]||['#edf2f7','#4a5568'];
+av.style.background=c[0];av.style.color=c[1];
+av.textContent=res.name.charAt(0);
+var info=document.createElement('div');
+var nm=document.createElement('div');nm.className='res-name';nm.textContent=res.name;
+var dt=document.createElement('div');dt.className='res-detail';
+dt.textContent=res.current_location?(getLocName(res.current_location)+' · '+res.status):res.status;
+info.appendChild(nm);info.appendChild(dt);
+if(res.mood&&res.current_location){
+var mood=document.createElement('span');mood.className='res-mood';mood.textContent=res.mood;
+info.appendChild(mood);
+}
+el.appendChild(av);el.appendChild(info);rc.appendChild(el);
+});
+if(d.pets&&d.pets.length>0){
+var pr=document.createElement('div');pr.className='pet-row';
+d.pets.forEach(function(p){
+var el=document.createElement('div');el.className='pet';
+var av=document.createElement('div');av.className='pet-avatar';
+av.style.background=p.species==='cat'?'#fefcbf':'#ebf8ff';
+av.style.color=p.species==='cat'?'#744210':'#2c5282';
+av.textContent=p.name.charAt(0);
+var info=document.createElement('div');
+var nm=document.createElement('div');nm.className='pet-name';nm.textContent=p.name;
+var dt=document.createElement('div');dt.className='pet-detail';
+dt.textContent=getLocName(p.current_location)+' · '+p.status;
+info.appendChild(nm);info.appendChild(dt);
+el.appendChild(av);el.appendChild(info);pr.appendChild(el);
+});
+rc.appendChild(pr);
+}
+}catch(e){}
+}
+
+var locNames={};
+async function loadLocNames(){
+try{
+var r=await fetch(BASE+'/api/v1/world/map');
+var d=await r.json();
+d.locations.forEach(function(l){locNames[l.id]=l.name;});
+}catch(e){}
+}
+function getLocName(id){return locNames[id]||id;}
+
+async function manualTick(){
+log('触发 tick...');
+try{
+var r=await fetch(BASE+'/api/v1/admin/tick',{method:'POST'});
+var d=await r.json();
+log('tick #'+d.tick_number+' 完成');
+if(d.events_triggered&&d.events_triggered.length>0){
+d.events_triggered.forEach(function(e){log('事件: '+e.description);});
+}
+if(d.pet_moves&&d.pet_moves.length>0){
+d.pet_moves.forEach(function(m){log(m.pet+': '+m.from+' → '+m.to);});
+}
+refresh();
+}catch(e){log('tick 失败: '+e.message);}
+}
+
+async function goOnline(){
+try{
+await fetch(BASE+'/api/v1/admin/yinyin/online',{method:'POST'});
+log('枔枔上线');refresh();
+}catch(e){log('失败: '+e.message);}
+}
+
+async function goOffline(){
+try{
+await fetch(BASE+'/api/v1/admin/yinyin/offline',{method:'POST'});
+log('枔枔下线');refresh();
+}catch(e){log('失败: '+e.message);}
+}
+
+async function refresh(){
+await fetchState();await fetchMap();await fetchResidents();
+}
+
+loadLocNames().then(refresh);
+setInterval(refresh,60000);
+</script>
+</body>
+</html>
