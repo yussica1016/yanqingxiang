@@ -10,6 +10,7 @@ import os
 
 from database import init_db, get_db
 from routers import world, residents, admin
+from mcp_server import mcp as mcp_app
 
 
 # ── 加载配置 ──
@@ -71,6 +72,9 @@ app.add_middleware(
 app.include_router(world.router, prefix="/api/v1/world", tags=["世界"])
 app.include_router(residents.router, prefix="/api/v1/residents", tags=["居民"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["管理"])
+
+# ── MCP Server（克宝接入口）──
+app.mount("/mcp", mcp_app.sse_app())
 
 
 @app.get("/")
