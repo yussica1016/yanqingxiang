@@ -65,3 +65,38 @@ def get_resident_history(resident_id: str, hours: int = 24, limit: int = 50):
         }
     finally:
         db.close()
+
+
+@router.post("/{resident_id}/update")
+def update_resident(resident_id: str, data: dict):
+    """更新居民状态（砚清巷插件调用）"""
+    db = get_db()
+    try:
+        r = db.execute("SELECT * FROM residents WHERE id=?", (resident_id,)).fetchone()
+        if not r:
+            raise HTTPException(status_code=404, detail=f"居民 {resident_id} 不存在")
+
+        old_location = r["current_location"]
+        old_mood = r["mood"]
+
+        new_location = data.get("current_location", old_location)
+        new_status = data.get("status", r["status"])
+        new_mood = data.get("mood", old_mood)
+
+        db.execute(
+            "UPDATE residents SET current_location=?, status=?, mood=?, last_action_at=datetime('now') WHERE id=?",
+            (new_location, new_status, new_mood, resident_id)
+        )
+
+        # 写行为日志
+        action_type = "move" if new_location != old_location else "interact"
+        ws = db.execute("SELECT tick_count FROM world_state WHERE id=1").fetchone()
+        db.execute(
+            "INSERT INTO action_logs (resident_id, tick_number, action_type, from_location, to_location, detail, mood_before, mood_after) VALUES (?,?,?,?,?,?,?,?)",
+            (resident_id, ws["tick_count"] if ws else 0, action_type, old_location, new_location, new_status, old_mood, new_mood)
+        )
+
+        db.commit()
+        return {"updated": True, "location": new_location, "status": new_status, "mood": new_mood}
+    finally:
+        db.close()
