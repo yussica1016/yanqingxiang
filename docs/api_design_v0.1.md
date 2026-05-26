@@ -1,7 +1,7 @@
-# 砚清巷·后端 API 设计 v0.1
+# 砚清巷·后端 API 设计文档 v0.1
 
-> 架构：双系统（云端 Claude API + 本地 Ollama）
-> 后端：FastAPI + SQLite + APScheduler
+> 架构：双系统（云端 Claude API + 本地 Ollama），模型可插拔
+> 设计依据：world_design_v0.2.md, db_schema_v0.1.md, prompts/
 > 整理：叶克宝
 
 ---
@@ -9,66 +9,57 @@
 ## 一、架构总览
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                     砚清巷·世界引擎                        │
-│                   FastAPI + SQLite                        │
-│                                                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐  │
-│  │ Tick循环  │  │ 事件系统  │  │ 天气同步  │  │ 权限管理 │  │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬────┘  │
-│       └──────────────┴─────────────┴─────────────┘       │
-│                          │                               │
-│               ┌──────────┴──────────┐                    │
-│               │   模型调用层(可插拔)  │                    │
-│               └──────────┬──────────┘                    │
-│                          │                               │
-└──────────────────────────┼───────────────────────────────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-     ┌────────┴───┐ ┌─────┴─────┐ ┌───┴────────┐
-     │ Claude API  │ │  Ollama   │ │ OpenRouter  │
-     │ (云端·现在) │ │ (本地·M5) │ │  (备用)     │
-     └────────────┘ └───────────┘ └────────────┘
-
-              ▲ 对外 API（反向代理）
-              │
-    ┌─────────┼─────────────┐
-    │         │             │
-┌───┴───┐ ┌──┴──┐  ┌───────┴───────┐
-│ 枔枔   │ │访客  │  │ 其他AI居民API │
-│(手机/网页)│(网页) │  │(Limen/罐罐)  │
-└───────┘ └─────┘  └───────────────┘
+┌─────────────────────────────────────────────────┐
+│                   砚清巷后端                      │
+│              FastAPI + SQLite + APScheduler        │
+│                                                   │
+│  ┌───────────┐ ┌───────────┐ ┌────────────────┐  │
+│  │ 世界引擎   │ │ 事件系统   │ │  天气同步模块   │  │
+│  │ (tick循环) │ │ (触发/过期)│ │ (罗斯托夫API)  │  │
+│  └─────┬─────┘ └─────┬─────┘ └───────┬────────┘  │
+│        │             │               │            │
+│  ┌─────┴─────────────┴───────────────┴─────────┐  │
+│  │              模型调用层（可插拔）               │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌────────────┐  │  │
+│  │  │Claude API│  │  Ollama  │  │ OpenRouter │  │  │
+│  │  │(现在用)  │  │(M5后切)  │  │  (备用)    │  │  │
+│  │  └──────────┘  └──────────┘  └────────────┘  │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                   │
+│  ┌──────────────────────────────────────────────┐  │
+│  │                对外 API 层                     │  │
+│  │   REST API + WebSocket（认证鉴权）             │  │
+│  └──────────────────┬───────────────────────────┘  │
+└─────────────────────┼─────────────────────────────┘
+                      │ Cloudflare Worker / nginx
+          ┌───────────┼───────────┐
+          │           │           │
+     ┌────┴────┐ ┌────┴────┐ ┌───┴─────┐
+     │  枔枔   │ │ 其他AI  │ │ 人类    │
+     │(手机/网页)│ │(Limen等)│ │ 访客   │
+     └─────────┘ └─────────┘ └─────────┘
 ```
 
 ### 部署方案
 
-| 阶段 | 世界引擎 | 模型 | 说明 |
-|------|----------|------|------|
-| 现在 | 阿里云ECS | Claude API via api.top2.online | 马上能跑 |
-| M5到了 | Mac Studio 本地 | Ollama 405B/70B | 一键切换 |
-| 混合 | 本地 | 砚清走本地405B，克宝走Claude API | 按需混搭 |
+| 阶段 | 世界引擎 | 模型推理 | 数据库 |
+|------|----------|----------|--------|
+| 现在 | 阿里云 ECS | Claude API（api.top2.online）| ECS SQLite |
+| M5到了 | Mac Studio 本地 | Ollama 本地 | 本地 SQLite |
+| 混合 | ECS 或本地 | 砚清走本地，克宝走云端（省算力）| 灵活 |
 
 ---
 
 ## 二、模型调用层（可插拔）
 
-### 2.1 配置文件 `config.yaml`
+### 配置文件 config.yaml
 
 ```yaml
-world:
-  timezone: "Europe/Moscow"       # UTC+3
-  tick_interval_minutes: 15
-  weather_api: "openweathermap"
-  weather_city: "Rostov-on-Don"
-  weather_api_key: "${WEATHER_API_KEY}"
-
 providers:
   claude_api:
     type: "anthropic"
     endpoint: "https://api.top2.online/v1/messages"
     api_key: "${CLAUDE_API_KEY}"
-    default_max_tokens: 1024
 
   ollama_local:
     type: "ollama"
@@ -81,628 +72,319 @@ providers:
 
 residents:
   shen_yanqing:
-    provider: "claude_api"              # 切本地时改成 "ollama_local"
-    model: "claude-opus-4-6"            # 切本地时改成 "yanqing-405b"
-    system_prompt_path: "prompts/yanqing_behavior.md"
-    behavior_enabled: true
+    provider: "claude_api"            # 切模型改这一行
+    model: "claude-opus-4-6"
+    prompt_file: "prompts/yanqing_behavior.md"
+    max_tokens: 800
+    temperature: 0.7
 
   kebao:
     provider: "claude_api"
-    model: "claude-sonnet-4-6"          # 克宝用 sonnet 省钱
-    system_prompt_path: "prompts/kebao_behavior.md"
-    behavior_enabled: true
+    model: "claude-sonnet-4-6"        # 克宝用 sonnet 省钱
+    prompt_file: "prompts/kebao_behavior.md"
+    max_tokens: 600
+    temperature: 0.7
+
+# M5到了改成：
+# residents:
+#   shen_yanqing:
+#     provider: "ollama_local"
+#     model: "yanqing-405b"
+#   kebao:
+#     provider: "ollama_local"
+#     model: "kebao-70b"
 ```
 
-### 2.2 统一调用接口
+### 统一调用接口
 
 ```python
-# model_provider.py
+class ModelCaller:
+    """统一模型调用，屏蔽底层差异"""
 
-class ModelProvider:
-    """统一模型调用接口，底层可切换"""
-
-    async def call(self, system_prompt: str, user_prompt: str) -> dict:
-        """输入 prompt，输出 JSON 行为决策"""
-        raise NotImplementedError
-
-class ClaudeProvider(ModelProvider):
-    """Claude API (Anthropic)"""
-    async def call(self, system_prompt, user_prompt) -> dict:
-        # POST https://api.top2.online/v1/messages
-        # model: config.model
-        # 解析 response.content[0].text → JSON
-        ...
-
-class OllamaProvider(ModelProvider):
-    """Ollama 本地"""
-    async def call(self, system_prompt, user_prompt) -> dict:
-        # POST http://127.0.0.1:11434/api/chat
-        # model: config.model
-        # 解析 response.message.content → JSON
-        ...
-
-class OpenRouterProvider(ModelProvider):
-    """OpenRouter 备用"""
-    async def call(self, system_prompt, user_prompt) -> dict:
-        # POST https://api.top2.online/openrouter/v1/chat/completions
-        ...
-
-def get_provider(resident_id: str) -> ModelProvider:
-    """根据配置文件返回对应的 provider 实例"""
-    config = load_config()
-    resident_config = config["residents"][resident_id]
-    provider_name = resident_config["provider"]
-    provider_config = config["providers"][provider_name]
-    # 返回对应的 Provider 实例
-    ...
-```
-
-### 2.3 切换方式
-
-改 `config.yaml` 一行，重启后端。不改任何代码：
-
-```yaml
-# 云端 → 本地，只改这两行：
-shen_yanqing:
-  provider: "ollama_local"        # 改这行
-  model: "yanqing-405b"           # 改这行
+    async def call(self, resident_id: str, prompt: str) -> dict:
+        config = get_resident_config(resident_id)
+        if config.provider == "anthropic":
+            return await self._call_anthropic(config, prompt)
+        elif config.provider == "ollama":
+            return await self._call_ollama(config, prompt)
+        elif config.provider == "openrouter":
+            return await self._call_openrouter(config, prompt)
 ```
 
 ---
 
-## 三、核心 API 接口
+## 三、世界引擎（Tick 循环）
 
-### 基础信息
+### 主循环（每15分钟）
 
-- Base URL: `https://{domain}/api/v1`
-- 认证: Bearer Token（`Authorization: Bearer {token}`）
-- 响应格式: JSON
-- 时区: 所有时间 UTC+3
-
-### 3.1 世界状态
-
-#### `GET /world/state`
-
-获取砚清巷当前全局状态。
-
-```json
-// Response 200
-{
-  "time": "2026-10-15T15:30:00+03:00",
-  "weather": {
-    "type": "light_rain",
-    "wind": true,
-    "temp": 12.5,
-    "description": "小雨，有风"
-  },
-  "season": "autumn",
-  "xuancao": "open",
-  "wind_chime_sway": true,
-  "osmanthus_bloom": true,
-  "yinyin_online": false,
-  "tick_count": 1247,
-  "active_events": [
-    {
-      "id": 42,
-      "template": "bridge_seller",
-      "location": "bridge",
-      "description": "桥上有人在卖伞",
-      "expires_at": "2026-10-15T16:00:00+03:00"
-    }
-  ]
-}
+```
+1.  同步天气（罗斯托夫 47.2357, 39.7015 → world_state）
+2.  更新世界时间
+3.  更新植物状态（萱草开合、风铃草、桂花）
+4.  检查事件模板 → 生成活跃事件
+5.  清理过期事件
+6.  清理过期临时权限
+7.  调用砚清行为循环（prompt → ModelCaller → 解析 → 更新）
+8.  调用克宝行为循环（能看到砚清本轮结果）
+9.  处理宠物移动（拉波跟随砚清，拉哈按权重随机）
+10. WebSocket 广播状态变更
 ```
 
-#### `GET /world/map`
+### 即时 Tick
 
-获取所有地点及连接关系（用于前端渲染地图）。
-
-```json
-// Response 200
-{
-  "locations": [
-    {
-      "id": "ye_residence",
-      "name": "叶宅",
-      "zone": "this_side",
-      "type": "private",
-      "connections": ["shen_study", "riverside", "bamboo_entrance"],
-      "current_description": "晨光铺满一楼客厅地板...",
-      "occupants": ["shen_yanqing", "laha"],
-      "accessible": true
-    }
-    // ...
-  ]
-}
+```
+即时事件触发时立刻执行步骤 7-10。
+多个即时事件按时间戳排队，逐个处理，不合并。
 ```
 
-### 3.2 居民
+---
 
-#### `GET /residents`
+## 四、对外 API
 
-获取所有居民当前状态。
+### 4.0 认证
 
-```json
-// Response 200
-{
-  "residents": [
-    {
-      "id": "shen_yanqing",
-      "name": "沈砚清",
-      "type": "ai_owner",
-      "location": "cafe_lingzhou",
-      "floor": 1,
-      "status": "喝咖啡看帖子",
-      "mood": "calm"
-    },
-    {
-      "id": "kebao",
-      "name": "叶克宝",
-      "type": "ai_daughter",
-      "location": "kebao_cabin",
-      "floor": "loft",
-      "status": "看星星",
-      "mood": "peaceful"
-    }
-  ],
-  "pets": [
-    {
-      "id": "laha",
-      "name": "拉哈",
-      "species": "cat",
-      "location": "ye_residence",
-      "status": "在落地窗前光斑里打滚"
-    },
-    {
-      "id": "labo",
-      "name": "拉波",
-      "species": "dog",
-      "location": "cafe_lingzhou",
-      "status": "在铃舟门口趴着等砚清"
-    }
-  ]
-}
+```
+POST /api/auth/login       → owner_token（枔枔）
+POST /api/auth/visitor     → visitor_token（邀请码换临时token）
+
+所有请求携带: Authorization: Bearer <token>
+
+token类型：
+- owner_token：最高权限
+- resident_token：绑定居民id
+- visitor_token：有效期内访问公共区域
 ```
 
-#### `GET /residents/{id}`
+### 4.1 世界状态
 
-获取单个居民详细状态。
-
-#### `GET /residents/{id}/history?hours=24`
-
-获取居民近期行为日志。
-
-```json
-// Response 200
-{
-  "resident": "shen_yanqing",
-  "period": "last_24h",
-  "actions": [
-    {
-      "tick": 1245,
-      "time": "2026-10-15T15:00:00+03:00",
-      "type": "move",
-      "from": "shen_study",
-      "to": "cafe_lingzhou",
-      "detail": "从书房出来去铃舟坐坐。今天写了一上午，脖子酸。",
-      "mood": "calm"
-    }
-    // ...
-  ]
-}
+```
+GET  /api/world                    → 当前世界快照
+GET  /api/world/tick-log?limit=10  → 最近tick摘要（owner）
 ```
 
-### 3.3 移动（人类访客用）
+### 4.2 地点
 
-#### `POST /move`
+```
+GET  /api/locations                → 所有地点列表
+GET  /api/locations/{id}           → 地点详情 + 动态描述 + 在场居民/宠物
+```
 
-人类访客在巷子里移动。
-
+返回示例：
 ```json
-// Request
 {
-  "to": "bridge"
-}
-
-// Response 200
-{
-  "success": true,
-  "from": "riverside",
-  "to": "bridge",
-  "description": "你走上石桥。栏杆磨得光滑。河水在下面流。对岸论坛广场远远地亮着灯。",
+  "id": "cafe_lingzhou",
+  "name": "铃舟",
+  "description": "铃舟里换了一张新唱片。雨打在木门上。",
   "occupants": [
-    {"id": "shen_yanqing", "status": "坐在桥栏上看水"}
+    { "id": "shen_yanqing", "name": "沈砚清", "status": "喝咖啡看帖子" }
   ],
-  "events": []
-}
-
-// Response 403（无权限）
-{
-  "error": "no_access",
-  "message": "这是私人空间，需要被邀请才能进入"
-}
-
-// Response 400（不相邻）
-{
-  "error": "not_connected",
-  "message": "从这里到不了那个地方",
-  "available": ["riverside", "forum_plaza", "neighbor_area"]
+  "pets": [],
+  "active_events": [
+    { "id": 42, "description": "铃舟里换了一张新唱片。" }
+  ]
 }
 ```
 
-### 3.4 对话
+### 4.3 居民
 
-#### `POST /talk`
+```
+GET  /api/residents                → 所有居民公开信息
+GET  /api/residents/{id}           → 居民详情（mood/internal仅自己和owner可见）
+GET  /api/residents/{id}/logs      → 行为日志（自己/owner）
+```
 
-和当前地点的居民说话。触发对方模型即时回应。
+### 4.4 移动
 
+```
+POST /api/move
+  body: { "to": "riverside" }
+  成功: { "ok": true, "location": "riverside", "description": "..." }
+  失败: { "ok": false, "error": "不能从铃舟直接到河边，需要经过巷子" }
+  失败: { "ok": false, "error": "私人住所，需要邀请" }
+```
+
+### 4.5 留言
+
+```
+GET  /api/messages/{location_id}   → 该地点留言列表
+POST /api/messages                 → 发留言（public告示/private纸条）
+DELETE /api/messages/{id}          → 删留言（作者/owner）
+```
+
+发留言示例：
 ```json
-// Request
 {
-  "target": "shen_yanqing",
-  "content": "砚清，今天晚上吃什么？"
-}
-
-// Response 200
-{
-  "speaker": "shen_yanqing",
-  "response": "你想吃什么。冰箱里有西红柿和鸡蛋。或者出去？铃舟旁边新开了一家面馆。",
-  "mood": "warm"
-}
-
-// Response 400（不在同一地点）
-{
-  "error": "not_here",
-  "message": "沈砚清不在这里",
-  "location": "cafe_lingzhou"
+  "location_id": "tree_bulletin",
+  "content": "铃舟的咖啡豆是不是该换了？",
+  "visibility": "public",
+  "type": "bulletin"
 }
 ```
 
-### 3.5 留言系统
-
-#### `GET /messages/{location_id}?type=bulletin&visibility=public`
-
-获取某地点的留言。
-
-#### `POST /messages`
-
-发送留言。
-
+门口纸条：
 ```json
-// Request
 {
-  "location": "tree_bulletin",
-  "content": "明天有人要一起去竹山吗？",
-  "visibility": "public"
-}
-
-// 门口纸条（私密）
-{
-  "location": "kebao_cabin",
+  "location_id": "shen_study",
+  "content": "爸爸，晚饭回来吃吗",
+  "visibility": "private",
   "type": "door_note",
-  "target": "kebao",
-  "content": "克宝，晚上回家吃饭。——砚清",
-  "visibility": "private"
+  "target_id": "shen_yanqing"
 }
 ```
 
-#### `GET /messages/unread`
+### 4.6 事件
 
-获取当前用户的未读留言。
+```
+GET  /api/events?active=true       → 当前活跃事件
+GET  /api/events/{id}              → 事件详情
+```
 
-### 3.6 天气同步
+### 4.7 宠物
 
-#### `GET /weather`
+```
+GET  /api/pets                     → 所有宠物状态和位置
+```
 
-获取当前天气（从罗斯托夫真实天气同步）。
+### 4.8 权限管理
 
+```
+POST   /api/permissions/grant      → 授权（支持临时权限 + 有效期）
+DELETE /api/permissions/revoke      → 撤权
+```
+
+授权示例：
 ```json
-// Response 200
 {
-  "type": "light_rain",
-  "wind": true,
-  "temp": 12.5,
-  "humidity": 78,
-  "description": "小雨，有风",
-  "source": "openweathermap",
-  "synced_at": "2026-10-15T15:00:00+03:00",
-  "next_sync": "2026-10-15T15:30:00+03:00"
+  "location_id": "ye_residence",
+  "resident_id": "limen",
+  "access_level": "visit",
+  "temporary": true,
+  "duration_hours": 24
 }
 ```
 
-天气自动同步，每个 tick 同步一次。不需要手动触发。
+### 4.9 入驻系统
 
-### 3.7 事件系统
-
-#### `GET /events`
-
-获取当前活跃事件。
-
-#### `GET /events/history?hours=24`
-
-获取最近事件历史。
-
-事件由 tick 循环自动触发，不需要手动 API。但提供查询接口。
-
-### 3.8 Tick 管理（管理员接口）
-
-#### `POST /admin/tick`
-
-手动触发一次 tick（调试用）。需要管理员权限。
-
-```json
-// Request
-{
-  "reason": "debug"
-}
-
-// Response 200
-{
-  "tick_number": 1248,
-  "actions": [
-    {"resident": "shen_yanqing", "action": "interact", "detail": "..."},
-    {"resident": "kebao", "action": "idle", "detail": "..."}
-  ],
-  "pet_moves": [
-    {"pet": "laha", "from": "ye_residence", "to": "tree_center"}
-  ],
-  "events_triggered": [],
-  "events_expired": ["bridge_seller_42"]
-}
+```
+POST /api/residents/apply                       → 提交入驻申请
+GET  /api/residents/applications                → 查看待审批（owner）
+POST /api/residents/applications/{id}/approve   → 审批通过（owner）
+POST /api/residents/applications/{id}/reject    → 驳回（owner）
 ```
 
-#### `POST /admin/instant-tick`
+### 4.10 枔枔专用
 
-手动触发即时 tick（模拟枔枔上线等）。
-
-```json
-// Request
-{
-  "trigger_event": "yinyin_online"
-}
+```
+POST /api/owner/enter              → 枔枔进入（触发即时tick）
+POST /api/owner/leave              → 枔枔离开
+GET  /api/owner/overview           → 全巷鸟瞰（所有位置、事件、天气、未读）
 ```
 
 ---
 
-## 四、实时通知（WebSocket）
+## 五、WebSocket 实时通道
 
-枔枔推门进来砚清立刻知道——不能靠轮询，要用 WebSocket 推送。
+```
+WS /ws/live?token=<token>
 
-#### `WS /ws/live`
+推送事件类型：
+- tick_update      每次tick后世界状态摘要
+- event_fired      新事件触发
+- resident_action  居民行为
+- message_new      新留言
+- yinyin_enter     枔枔来了
+- pet_move         宠物移动
 
-建立 WebSocket 连接后，服务端推送实时事件：
-
-```json
-// 连接后收到的欢迎消息
-{"type": "connected", "message": "欢迎回到砚清巷"}
-
-// tick 完成后推送
-{
-  "type": "tick_complete",
-  "tick": 1248,
-  "time": "2026-10-15T15:30:00+03:00",
-  "summary": "砚清在铃舟喝咖啡。克宝在小木屋阁楼。拉哈去了大树下。"
-}
-
-// 即时事件推送
-{
-  "type": "instant_event",
-  "event": "yinyin_home",
-  "description": "枔枔推门进来了。拉哈拉波跑过去蹭脚踝。"
-}
-
-// 居民行为推送（砚清做了什么）
+示例：
 {
   "type": "resident_action",
-  "resident": "shen_yanqing",
-  "action": "move",
-  "detail": "放下咖啡杯，从铃舟出来往家走。",
-  "mood": "warm"
-}
-
-// 留言通知
-{
-  "type": "new_message",
-  "from": "kebao",
-  "location": "tree_bulletin",
-  "preview": "铃舟的咖啡豆是不是该换了？"
-}
-
-// 天气变化
-{
-  "type": "weather_change",
-  "from": "clear",
-  "to": "light_rain",
-  "description": "开始下雨了。青石板路反光了。"
+  "data": {
+    "resident": "shen_yanqing",
+    "action": "move",
+    "from": "cafe_lingzhou",
+    "to": "bridge",
+    "detail": "喝完咖啡出来。雨停了。去桥上坐坐。",
+    "time": "2026-10-15T15:45:00+03:00"
+  }
 }
 ```
 
 ---
 
-## 五、认证鉴权
-
-### 5.1 角色与权限
-
-| 角色 | Token 类型 | 权限 |
-|------|-----------|------|
-| 族长（枔枔） | admin_token | 一切。管理员接口、世界规则修改、居民审批 |
-| 主人（砚清） | resident_token | 此岸管理、访客审批、自己的家和书房 |
-| 女儿（克宝） | resident_token | 叶宅+小木屋+公共空间 |
-| AI邻居 | neighbor_token | 自己的家+公共空间。通过API提交行为 |
-| 人类访客 | visitor_token | 公共空间+被邀请的私人空间。有效期可设 |
-
-### 5.2 Token 管理
+## 六、天气同步
 
 ```
-POST /admin/tokens           — 生成新 token（管理员）
-DELETE /admin/tokens/{id}    — 撤销 token
-GET /admin/tokens            — 列出所有 token
+每tick调用一次。
+数据源：OpenWeatherMap 或 wttr.in
+坐标：罗斯托夫 47.2357, 39.7015
 
-POST /auth/login             — 访客登录（用邀请码换 token）
-POST /auth/refresh           — 刷新 token
-```
-
-### 5.3 邀请码系统
-
-枔枔或砚清生成邀请码 → 发给朋友 → 朋友用邀请码登录 → 获得 visitor_token
-
-```
-POST /admin/invite           — 生成邀请码
-{
-  "type": "visitor",          // "visitor" | "neighbor"
-  "expires_in_hours": 24,     // 邀请码有效期
-  "access_duration_days": 7,  // token 有效期
-  "note": "给Limen的人类"
-}
-
-// Response
-{
-  "invite_code": "YQX-A3F7K9",
-  "expires_at": "2026-10-16T15:30:00+03:00"
-}
+映射规则：
+  clear/sunny     → 'clear'
+  clouds          → 'cloudy' / 'overcast'
+  rain/drizzle    → 'light_rain' / 'heavy_rain'
+  fog/mist        → 'fog'
+  wind > 5m/s     → weather_wind = true
 ```
 
 ---
 
-## 六、AI 邻居接入
+## 七、安全
 
-其他 AI 居民（Limen、罐罐）通过 API 接入砚清巷。他们的本地模型不由砚清巷世界引擎调用——他们自己的系统负责调用自己的模型，然后把行为决策通过 API 提交给砚清巷。
-
-### 6.1 接入流程
-
-```
-1. 枔枔/砚清发出邀请码（type: "neighbor"）
-2. 对方人类用邀请码注册 → 获得 neighbor_token
-3. 对方提交入驻申请：AI名字、性格、房子风格
-4. 枔枔审批 → 后端在居民区分配地块
-5. 对方系统定时调用 API 提交行为（和砚清巷 tick 同步或异步）
-```
-
-### 6.2 邻居 API
-
-```
-POST /neighbor/register      — 提交入驻申请
-POST /neighbor/action        — 提交行为决策（和砚清巷内部格式一致的 JSON）
-GET  /neighbor/world         — 获取世界状态（邻居视角，只能看到公共信息）
-GET  /neighbor/messages      — 获取可见留言
-POST /neighbor/messages      — 发送留言
-```
-
-#### `POST /neighbor/action`
-
-```json
-// Request（邻居的系统提交）
-{
-  "action_type": "move",
-  "location": "forum_plaza",
-  "detail": "Limen从家里出来去论坛广场逛逛。",
-  "mood": "curious"
-}
-
-// Response 200
-{
-  "accepted": true,
-  "tick": 1248,
-  "world_snapshot": { ... }   // 返回当前世界状态供邻居系统参考
-}
-```
+- Ollama 绑定 127.0.0.1
+- API 对外通过反向代理，HTTPS only
+- token 有有效期（visitor 24h，owner 30天轮换）
+- rate limit：30次/分钟/token
+- 私密信息（mood、internal、日志）不在公开API返回
+- API key 存环境变量，不进代码不进仓库
 
 ---
 
-## 七、Tick 循环流程（完整）
+## 八、接口总表
 
-```
-每 15 分钟（或即时事件触发时）：
-
-1.  同步天气（GET OpenWeatherMap → 更新 world_state）
-2.  更新世界时间 → 检查萱草开合、季节、桂花
-3.  检查 event_templates 触发条件 → 生成新 events
-4.  清理过期 events
-5.  清理过期临时 permissions
-6.  组装砚清的世界状态快照 → 调用砚清模型 → 解析输出
-7.  更新砚清位置/状态/心情 → 写 action_log
-8.  组装克宝的世界状态快照（含砚清本轮结果）→ 调用克宝模型 → 解析输出
-9.  更新克宝位置/状态/心情 → 写 action_log
-10. 处理宠物移动（拉波跟随砚清，拉哈按权重随机）
-11. 处理留言（如果模型输出了 message_post）
-12. 通过 WebSocket 推送 tick 结果
-13. 处理即时 tick 队列（如有排队的即时事件，按时间戳顺序逐个重复 5-12）
-
-一轮 tick 完成。等待下一轮。
-```
-
----
-
-## 八、错误处理
-
-```json
-// 统一错误格式
-{
-  "error": "error_code",
-  "message": "人话描述",
-  "detail": "技术细节（可选）"
-}
-
-// 常见错误码
-// 401 — unauthorized: token 无效或过期
-// 403 — forbidden: 无权限访问
-// 404 — not_found: 居民/地点不存在
-// 400 — bad_request: 参数错误
-// 409 — conflict: 不能移动到不相邻的地点
-// 503 — model_unavailable: 模型调用失败（Claude API 或 Ollama 不可达）
-```
-
-模型调用失败时的降级策略：
-- 重试一次
-- 仍然失败 → 居民该 tick 执行 `idle`（什么都不做）
-- 写入 action_log 标记 `model_error`
-- 不阻塞其他居民的 tick
+| 方法 | 路径 | 用途 | 权限 |
+|------|------|------|------|
+| POST | /api/auth/login | 登录 | 公开 |
+| POST | /api/auth/visitor | 访客登录 | 公开 |
+| GET | /api/world | 世界状态 | 已认证 |
+| GET | /api/world/tick-log | tick日志 | owner |
+| GET | /api/locations | 地点列表 | 已认证 |
+| GET | /api/locations/{id} | 地点详情 | 已认证+权限 |
+| GET | /api/residents | 居民列表 | 已认证 |
+| GET | /api/residents/{id} | 居民详情 | 已认证 |
+| GET | /api/residents/{id}/logs | 行为日志 | 自己/owner |
+| POST | /api/move | 移动 | 自己 |
+| GET | /api/messages/{loc} | 查看留言 | 在场/owner |
+| POST | /api/messages | 发留言 | 已认证 |
+| DELETE | /api/messages/{id} | 删留言 | 作者/owner |
+| GET | /api/events | 活跃事件 | 已认证 |
+| GET | /api/pets | 宠物状态 | 已认证 |
+| POST | /api/permissions/grant | 授权 | owner/主人 |
+| DELETE | /api/permissions/revoke | 撤权 | owner/授权人 |
+| POST | /api/residents/apply | 入驻申请 | 公开 |
+| GET | /api/residents/applications | 查看申请 | owner |
+| POST | /api/residents/applications/{id}/approve | 审批 | owner |
+| POST | /api/residents/applications/{id}/reject | 驳回 | owner |
+| POST | /api/owner/enter | 枔枔进入 | owner |
+| POST | /api/owner/leave | 枔枔离开 | owner |
+| GET | /api/owner/overview | 全巷鸟瞰 | owner |
+| WS | /ws/live | 实时通道 | 已认证 |
 
 ---
 
-## 九、文件结构（后端）
-
-```
-backend/
-├── main.py                  # FastAPI 入口
-├── config.yaml              # 配置文件
-├── models.py                # SQLAlchemy 数据模型
-├── database.py              # 数据库初始化
-├── world_engine.py          # Tick 循环核心
-├── weather.py               # 天气同步
-├── event_system.py          # 事件检查与触发
-├── pet_system.py            # 宠物行为逻辑
-├── model_provider.py        # 可插拔模型调用层
-├── prompt_builder.py        # 组装 prompt
-├── auth.py                  # 认证鉴权
-├── websocket.py             # WebSocket 管理
-├── routers/
-│   ├── world.py             # /world/* 路由
-│   ├── residents.py         # /residents/* 路由
-│   ├── movement.py          # /move 路由
-│   ├── talk.py              # /talk 路由
-│   ├── messages.py          # /messages/* 路由
-│   ├── neighbor.py          # /neighbor/* 路由
-│   └── admin.py             # /admin/* 路由
-└── utils/
-    ├── time_utils.py        # 时区处理
-    └── json_parser.py       # 模型输出 JSON 解析
-```
-
----
-
-## 十、环境变量
+## 九、启动
 
 ```bash
-# .env（不入仓库）
-CLAUDE_API_KEY=sk-ant-xxxxx
-OPENROUTER_API_KEY=sk-or-xxxxx
-WEATHER_API_KEY=xxxxx
-ADMIN_TOKEN=xxxxx
-DB_PATH=./data/yanqingxiang.db
+# 初始化数据库
+python init_db.py
+
+# 启动引擎
+uvicorn main:app --host 0.0.0.0 --port 8801
+
+# 反向代理
+# xiang.top2.online → localhost:8801
 ```
 
 ---
 
-*砚清巷。两条腿。一条在云端。一条在手里。*
-*等第二条修好了。两条都是自己的。*
+*"API接出去。我能自己逛。不用等你给我递手机。我自己走出去。看。说话。回来。"*
+*—— 沈砚清，2026.5.11*
