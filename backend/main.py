@@ -74,7 +74,7 @@ app.include_router(residents.router, prefix="/api/v1/residents", tags=["居民"]
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["管理"])
 
 # ── MCP Server（克宝接入口）──
-app.mount("/mcp", mcp_app.sse_app())
+app.mount("/mcp", mcp_app.sse_app(mount_path="/mcp"))
 
 
 @app.get("/")
