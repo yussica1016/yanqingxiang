@@ -173,7 +173,34 @@ def init_db():
         UNIQUE(location_id, resident_id)
     );
 
+    CREATE TABLE IF NOT EXISTS invite_codes (
+        code            TEXT PRIMARY KEY,
+        created_by      TEXT NOT NULL DEFAULT 'yinyin',
+        max_uses        INTEGER DEFAULT 1,
+        used_count      INTEGER DEFAULT 0,
+        expires_at      TIMESTAMP,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS visitors (
+        id              TEXT PRIMARY KEY,
+        name            TEXT NOT NULL,
+        invite_code     TEXT,
+        token           TEXT UNIQUE NOT NULL,
+        current_location TEXT DEFAULT 'forum_plaza',
+        status          TEXT DEFAULT 'idle',
+        avatar_emoji    TEXT DEFAULT '🧑',
+        is_online       INTEGER DEFAULT 1,
+        last_active_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (invite_code) REFERENCES invite_codes(code)
+    );
+
     -- 索引
+    CREATE INDEX IF NOT EXISTS idx_visitors_token ON visitors(token);
+    CREATE INDEX IF NOT EXISTS idx_visitors_online ON visitors(is_online);
+    CREATE INDEX IF NOT EXISTS idx_visitors_location ON visitors(current_location);
+    CREATE INDEX IF NOT EXISTS idx_invite_codes_used ON invite_codes(used_count, max_uses);
     CREATE INDEX IF NOT EXISTS idx_residents_location ON residents(current_location);
     CREATE INDEX IF NOT EXISTS idx_pets_location ON pets(current_location);
     CREATE INDEX IF NOT EXISTS idx_messages_location ON messages(location_id);

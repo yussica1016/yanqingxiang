@@ -57,10 +57,22 @@ def get_world_map():
         locations = db.execute("SELECT * FROM locations").fetchall()
         residents = db.execute("SELECT id, name, current_location, status FROM residents WHERE current_location IS NOT NULL").fetchall()
         pets = db.execute("SELECT id, name, species, current_location, status FROM pets").fetchall()
+        visitors = db.execute(
+            "SELECT id, name, current_location, avatar_emoji FROM visitors WHERE is_online=1 AND current_location IS NOT NULL"
+        ).fetchall()
+        ws = db.execute("SELECT yinyin_online, yinyin_location FROM world_state WHERE id=1").fetchone()
 
-        # 按地点聚合在场居民/宠物
+        # 按地点聚合在场居民/宠物/访客
         occupant_map = {}
+        # 枔枔的位置
+        if ws and ws["yinyin_online"] and ws["yinyin_location"]:
+            loc = ws["yinyin_location"]
+            if loc not in occupant_map:
+                occupant_map[loc] = []
+            occupant_map[loc].append({"id": "yinyin", "name": "叶枔枖", "status": "online", "type": "owner"})
         for r in residents:
+            if r["id"] == "yinyin":
+                continue  # 枔枔已从world_state处理
             loc = r["current_location"]
             if loc not in occupant_map:
                 occupant_map[loc] = []
@@ -70,6 +82,11 @@ def get_world_map():
             if loc not in occupant_map:
                 occupant_map[loc] = []
             occupant_map[loc].append({"id": p["id"], "name": p["name"], "status": p["status"], "type": p["species"]})
+        for v in visitors:
+            loc = v["current_location"]
+            if loc not in occupant_map:
+                occupant_map[loc] = []
+            occupant_map[loc].append({"id": v["id"], "name": v["name"], "status": "visiting", "type": "visitor", "avatar": v["avatar_emoji"]})
 
         return {
             "locations": [

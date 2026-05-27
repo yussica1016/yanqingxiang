@@ -4,282 +4,622 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>砚清巷</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+:root{
+  --bg:#f2f6fa;--card:#fff;--border:#d6e4ef;--blue:#2c5282;--blue-light:#ebf8ff;
+  --blue-mid:#90cdf4;--text:#1a2a3a;--muted:#718096;--dim:#a0aec0;
+  --green:#68d391;--red:#fc8181;--gold:#d69e2e;--gold-bg:#fefcbf;
+  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.06);
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f4f8fb;color:#1a2a3a;min-height:100vh}
-.header{background:#fff;border-bottom:1px solid #d6e4ef;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
-.header h1{font-size:18px;font-weight:500;color:#2c5282}
-.header-status{font-size:12px;color:#718096;display:flex;align-items:center;gap:8px}
-.header-dot{width:6px;height:6px;border-radius:50%;background:#68d391}
-.main{max-width:960px;margin:0 auto;padding:20px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+body{font-family:'Noto Sans SC','PingFang SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── 登录 ── */
+.login-overlay{position:fixed;inset:0;background:rgba(242,246,250,.97);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.login-overlay.hidden{display:none}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:36px 32px;width:340px;max-width:90vw;box-shadow:0 8px 30px rgba(44,82,130,.08)}
+.login-title{font-family:'Noto Serif SC',serif;font-size:22px;font-weight:500;color:var(--blue);text-align:center;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px}
+.login-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.login-tab{flex:1;padding:8px;text-align:center;font-size:13px;cursor:pointer;background:var(--card);color:var(--muted);transition:all .15s;border:none}
+.login-tab.active{background:var(--blue-light);color:var(--blue);font-weight:500}
+.login-form{display:none}
+.login-form.active{display:block}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.field input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);outline:none;transition:border .15s}
+.field input:focus{border-color:var(--blue-mid)}
+.field input::placeholder{color:var(--dim)}
+.avatar-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.avatar-opt{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:2px solid transparent;border-radius:8px;cursor:pointer;font-size:16px;transition:all .15s}
+.avatar-opt:hover{background:var(--blue-light)}
+.avatar-opt.selected{border-color:var(--blue-mid);background:var(--blue-light)}
+.login-btn{width:100%;padding:11px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;transition:all .15s}
+.login-btn:hover{opacity:.9}
+.login-btn:active{transform:scale(.98)}
+.login-error{font-size:12px;color:#c53030;margin-top:10px;text-align:center;min-height:16px}
+
+/* ── 头部 ── */
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header h1{font-family:'Noto Serif SC',serif;font-size:17px;font-weight:500;color:var(--blue)}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.header-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.btn-logout{padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit}
+.btn-logout:hover{background:#fff0f0;color:#c53030;border-color:#fed7d7}
+
+/* ── 主体 ── */
+.main{max-width:960px;margin:0 auto;padding:16px}
+
+/* ── 状态栏 ── */
+.status-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.status-item{font-size:12px;padding:5px 10px;border-radius:6px;background:var(--card);border:1px solid var(--border);color:var(--blue)}
+.status-item.offline{background:#fff5f5;color:#c53030;border-color:#fed7d7}
+
+/* ── 你在这里 ── */
+.current-location-bar{background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.cl-left{display:flex;align-items:center;gap:10px}
+.cl-pin{font-size:18px}
+.cl-name{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:500;color:var(--blue)}
+.cl-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.cl-people{font-size:12px;color:var(--blue)}
+
+/* ── 地图 ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 @media(max-width:640px){.grid{grid-template-columns:1fr}}
-.card{background:#fff;border:1px solid #d6e4ef;border-radius:10px;padding:16px;overflow:hidden}
-.card-title{font-size:13px;font-weight:500;color:#4a7ab5;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-@media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
-.stat{background:#fff;border:1px solid #d6e4ef;border-radius:10px;padding:12px}
-.stat-label{font-size:11px;color:#718096}
-.stat-value{font-size:18px;font-weight:500;color:#2c5282;margin-top:2px}
-.zone{margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.card-title{font-family:'Noto Serif SC',serif;font-size:13px;font-weight:500;color:var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.zone{margin-bottom:12px}
 .zone:last-child{margin-bottom:0}
-.zone-label{font-size:11px;color:#a0aec0;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #edf2f7}
+.zone-label{font-size:11px;color:var(--dim);margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #edf2f7}
 .locs{display:flex;flex-wrap:wrap;gap:6px}
-.loc{padding:6px 10px;border-radius:6px;border:1px solid #d6e4ef;font-size:12px;background:#fff;transition:all .15s}
-.loc:hover{background:#ebf4ff}
-.loc-name{font-weight:500;color:#2c5282}
-.loc-occ{font-size:11px;color:#718096;margin-top:1px}
-.loc.occupied{border-color:#90cdf4;background:#ebf8ff}
-.loc.private{border-left:2px solid #90cdf4}
-.loc.wip{opacity:.45}
-.resident{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf2f7}
-.resident:last-child{border-bottom:none}
-.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
-.res-name{font-size:13px;font-weight:500;color:#1a2a3a}
-.res-detail{font-size:11px;color:#718096}
-.res-mood{font-size:10px;padding:2px 6px;border-radius:4px;background:#ebf8ff;color:#2c5282;display:inline-block;margin-top:2px}
-.pet-row{display:flex;gap:16px;padding-top:8px;border-top:1px solid #edf2f7;margin-top:8px}
+
+.loc{padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--card);transition:all .2s;cursor:default;position:relative}
+.loc .loc-name{font-weight:500;color:var(--blue)}
+.loc .loc-occ{font-size:11px;color:var(--muted);margin-top:2px}
+.loc.occupied{border-color:var(--blue-mid);background:var(--blue-light)}
+.loc.here{border-color:var(--blue);background:var(--blue);box-shadow:0 0 0 2px rgba(44,82,130,.2)}
+.loc.here .loc-name{color:#fff}
+.loc.here .loc-occ{color:rgba(255,255,255,.8)}
+.loc.here::after{content:'📍';position:absolute;top:-6px;right:-4px;font-size:12px}
+.loc.reachable{cursor:pointer;border-color:#b3d8f0;background:#f7fbff}
+.loc.reachable:hover{background:var(--blue-light);border-color:var(--blue-mid);transform:translateY(-1px);box-shadow:0 2px 6px rgba(44,82,130,.1)}
+.loc.reachable .loc-name::after{content:' →';font-size:10px;color:var(--dim)}
+.loc.wip{opacity:.4;cursor:default!important}
+.loc.private-locked{border-left:3px solid #e2e8f0}
+
+/* ── 居民/访客 ── */
+.person-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf2f7}
+.person-row:last-child{border-bottom:none}
+.person-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.person-name{font-size:13px;font-weight:500;color:var(--text)}
+.person-detail{font-size:11px;color:var(--muted)}
+.person-mood{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-light);color:var(--blue);display:inline-block;margin-top:1px}
+.pet-section{border-top:1px solid #edf2f7;margin-top:10px;padding-top:10px;display:flex;gap:14px}
 .pet{display:flex;align-items:center;gap:8px;flex:1}
-.pet-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
-.pet-name{font-size:12px;font-weight:500;color:#1a2a3a}
-.pet-detail{font-size:11px;color:#718096}
-.event{padding:6px 0;border-bottom:1px solid #edf2f7;font-size:12px;color:#1a2a3a}
-.event:last-child{border-bottom:none}
-.event-time{font-size:10px;color:#a0aec0;margin-left:4px}
-.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.tag{font-size:11px;padding:3px 8px;border-radius:4px;background:#ebf8ff;color:#2c5282;border:1px solid #d6e4ef}
-.tag.off{background:#fff;color:#a0aec0}
-.tag.offline{background:#fff0f0;color:#c53030}
-.actions{display:flex;gap:8px;margin-top:12px}
-.btn{padding:6px 14px;border-radius:6px;border:1px solid #d6e4ef;background:#fff;color:#2c5282;font-size:12px;cursor:pointer;transition:all .15s}
-.btn:hover{background:#ebf4ff;border-color:#90cdf4}
+.pet-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
+.pet-name{font-size:12px;font-weight:500}
+.pet-detail{font-size:11px;color:var(--muted)}
+
+/* ── 事件 ── */
+.event-item{padding:6px 0;border-bottom:1px solid #edf2f7;font-size:12px}
+.event-item:last-child{border-bottom:none}
+.event-time{font-size:10px;color:var(--dim);margin-left:4px}
+
+/* ── 操作区 ── */
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.btn{padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--blue);font-size:12px;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{background:var(--blue-light);border-color:var(--blue-mid)}
 .btn:active{transform:scale(.98)}
-.btn.primary{background:#ebf8ff;border-color:#90cdf4}
-.log{margin-top:16px}
-.log-entry{font-size:11px;color:#718096;padding:3px 0;font-family:monospace}
-.footer{text-align:center;font-size:11px;color:#a0aec0;padding:20px 0}
+.btn.primary{background:var(--blue-light);border-color:var(--blue-mid)}
+
+/* ── 邀请码面板 ── */
+.invite-panel{background:#fafcfe;border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px}
+.invite-panel h4{font-size:12px;color:var(--blue);margin-bottom:8px}
+.invite-code-item{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #edf2f7}
+.invite-code-item:last-child{border-bottom:none}
+.invite-code-val{font-family:monospace;color:var(--blue);font-weight:500}
+.invite-code-usage{color:var(--muted)}
+
+.log{margin-top:10px}
+.log-entry{font-size:11px;color:var(--muted);padding:2px 0;font-family:'Noto Sans SC',monospace}
+.footer{text-align:center;font-size:11px;color:var(--dim);padding:18px 0}
+
+/* ── 移动提示 ── */
+.move-hint{font-size:11px;color:var(--dim);margin-bottom:10px;font-style:italic}
+
+/* ── 通知toast ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
 </style>
 </head>
 <body>
+
+<!-- 登录 -->
+<div class="login-overlay" id="login-overlay">
+<div class="login-box">
+  <div class="login-title">砚清巷</div>
+  <div class="login-sub">巷子里的灯亮着</div>
+  <div class="login-tabs">
+    <div class="login-tab active" onclick="switchTab('visitor')">访客</div>
+    <div class="login-tab" onclick="switchTab('owner')">叶枔枖</div>
+  </div>
+  <!-- 访客 -->
+  <div class="login-form active" id="form-visitor">
+    <div class="field"><label>邀请码</label><input id="invite-code" placeholder="找叶枔枖要"></div>
+    <div class="field"><label>你的名字</label><input id="visitor-name" placeholder="起个名字吧" maxlength="20"></div>
+    <div class="field">
+      <label>选个头像</label>
+      <div class="avatar-picker" id="avatar-picker"></div>
+    </div>
+    <button class="login-btn" onclick="registerVisitor()">进巷子</button>
+    <div class="login-error" id="err-visitor"></div>
+  </div>
+  <!-- 主人 -->
+  <div class="login-form" id="form-owner">
+    <div class="field"><label>密码</label><input id="owner-pass" type="password" placeholder=""></div>
+    <button class="login-btn" onclick="loginOwner()">回家</button>
+    <div class="login-error" id="err-owner"></div>
+  </div>
+</div>
+</div>
+
+<!-- 主界面 -->
 <div class="header">
-<h1>砚清巷</h1>
-<div class="header-status"><span class="header-dot" id="status-dot"></span><span id="status-text">connecting</span></div>
+  <h1>砚清巷</h1>
+  <div class="header-right">
+    <div class="header-user"><span class="header-dot"></span><span id="h-user">--</span></div>
+    <button class="btn-logout" onclick="doLogout()">离开</button>
+  </div>
 </div>
 
 <div class="main">
-<div class="stats" id="stats">
-<div class="stat"><div class="stat-label">世界时间</div><div class="stat-value" id="s-time">--:--</div></div>
-<div class="stat"><div class="stat-label">天气</div><div class="stat-value" id="s-weather">--</div></div>
-<div class="stat"><div class="stat-label">季节</div><div class="stat-value" id="s-season">--</div></div>
-<div class="stat"><div class="stat-label">tick</div><div class="stat-value" id="s-tick">--</div></div>
+  <!-- 状态栏 -->
+  <div class="status-bar" id="status-bar"></div>
+
+  <!-- 你在这里 -->
+  <div class="current-location-bar" id="cl-bar" style="display:none">
+    <div class="cl-left">
+      <span class="cl-pin">📍</span>
+      <div>
+        <div class="cl-name" id="cl-name">--</div>
+        <div class="cl-desc" id="cl-desc"></div>
+      </div>
+    </div>
+    <div class="cl-people" id="cl-people"></div>
+  </div>
+
+  <div class="grid">
+    <!-- 地图 -->
+    <div class="card">
+      <div class="card-title">🗺️ 砚清巷地图</div>
+      <div class="move-hint" id="move-hint">点击相邻地点可以走过去</div>
+      <div id="map-container"></div>
+    </div>
+    <!-- 居民 -->
+    <div class="card">
+      <div class="card-title">🏠 谁在巷子里</div>
+      <div id="residents-container"></div>
+      <div id="visitors-container" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- 事件 -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">🎐 发生的事</div>
+    <div id="events-container"><div class="event-item" style="color:var(--dim)">加载中</div></div>
+  </div>
+
+  <!-- 操作 -->
+  <div class="card" id="admin-panel" style="display:none">
+    <div class="card-title">⚙️ 管理</div>
+    <div class="actions">
+      <button class="btn primary" onclick="manualTick()">手动 tick</button>
+      <button class="btn" onclick="generateInvite()">生成邀请码</button>
+      <button class="btn" onclick="toggleInvitePanel()">查看邀请码</button>
+      <button class="btn" onclick="refresh()">刷新</button>
+    </div>
+    <div class="invite-panel" id="invite-panel" style="display:none">
+      <h4>邀请码</h4>
+      <div id="invite-list">加载中...</div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="footer">砚清巷 v0.2.0</div>
 </div>
 
-<div class="tags" id="tags"></div>
-
-<div class="grid">
-<div class="card">
-<div class="card-title">地图</div>
-<div id="map-container"></div>
-</div>
-<div class="card">
-<div class="card-title">居民</div>
-<div id="residents-container"></div>
-</div>
-</div>
-
-<div class="card" style="margin-bottom:16px">
-<div class="card-title">事件</div>
-<div id="events-container"><div class="event" style="color:#a0aec0">加载中</div></div>
-</div>
-
-<div class="card">
-<div class="card-title">操作</div>
-<div class="actions">
-<button class="btn primary" onclick="manualTick()">手动 tick</button>
-<button class="btn" onclick="goOnline()">叶枔枖上线</button>
-<button class="btn" onclick="goOffline()">叶枔枖下线</button>
-<button class="btn" onclick="refresh()">刷新</button>
-</div>
-<div class="log" id="log"></div>
-</div>
-
-<div class="footer">砚清巷 v0.1.0</div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
 var BASE='';
-var WEATHER_MAP={clear:'晴',cloudy:'多云',overcast:'阴',light_rain:'小雨',heavy_rain:'大雨',fog:'雾',wind:'风'};
-var SEASON_MAP={spring:'春',summer:'夏',autumn:'秋',winter:'冬'};
+var W_MAP={clear:'☀️ 晴',cloudy:'⛅ 多云',overcast:'☁️ 阴',light_rain:'🌧️ 小雨',heavy_rain:'🌧️ 大雨',fog:'🌫️ 雾',wind:'💨 风'};
+var S_MAP={spring:'🌸 春',summer:'☀️ 夏',autumn:'🍂 秋',winter:'❄️ 冬'};
 var ZONE_NAMES={this_side:'此岸',bridge:'石桥',other_side:'对岸',mountain:'竹山'};
 var ZONE_ORDER=['this_side','bridge','other_side','mountain'];
+var AVATARS=["🧑","👤","🐱","🐶","🌸","🍃","🌙","⭐","🎵","🦊","🐰","🐻","🌻","🍀","🎐"];
 
-function log(msg){
-var el=document.getElementById('log');
-var d=document.createElement('div');
-d.className='log-entry';
-d.textContent=new Date().toLocaleTimeString()+' '+msg;
-el.insertBefore(d,el.firstChild);
-if(el.children.length>10)el.removeChild(el.lastChild);
+var session={role:null,token:null,name:null,location:null,avatar:null};
+var locData={};
+var locNames={};
+
+// ── 初始化 ──
+(function(){
+  // 头像选择器
+  var picker=document.getElementById('avatar-picker');
+  AVATARS.forEach(function(a,i){
+    var el=document.createElement('div');
+    el.className='avatar-opt'+(i===0?' selected':'');
+    el.textContent=a;
+    el.onclick=function(){
+      picker.querySelectorAll('.avatar-opt').forEach(function(x){x.classList.remove('selected')});
+      el.classList.add('selected');
+    };
+    picker.appendChild(el);
+  });
+  // 尝试恢复会话
+  var saved=localStorage.getItem('yqx_session');
+  if(saved){
+    try{
+      var s=JSON.parse(saved);
+      if(s.role==='owner'){
+        session=s;
+        enterApp();
+      }else if(s.token){
+        // 验证token
+        fetch(BASE+'/api/v1/visitor/login',{method:'POST',headers:{'X-Visitor-Token':s.token}})
+        .then(function(r){return r.json()})
+        .then(function(d){
+          if(d.visitor_id){
+            session={role:'visitor',token:s.token,name:d.name,location:d.location,avatar:d.avatar_emoji};
+            enterApp();
+          }
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+})();
+
+// ── 登录相关 ──
+function switchTab(tab){
+  document.querySelectorAll('.login-tab').forEach(function(t){t.classList.remove('active')});
+  document.querySelectorAll('.login-form').forEach(function(f){f.classList.remove('active')});
+  if(tab==='visitor'){
+    document.querySelectorAll('.login-tab')[0].classList.add('active');
+    document.getElementById('form-visitor').classList.add('active');
+  }else{
+    document.querySelectorAll('.login-tab')[1].classList.add('active');
+    document.getElementById('form-owner').classList.add('active');
+  }
+}
+
+async function registerVisitor(){
+  var code=document.getElementById('invite-code').value.trim();
+  var name=document.getElementById('visitor-name').value.trim();
+  var sel=document.querySelector('.avatar-opt.selected');
+  var avatar=sel?sel.textContent:'🧑';
+  var err=document.getElementById('err-visitor');
+  err.textContent='';
+  if(!code){err.textContent='需要邀请码';return;}
+  if(!name){err.textContent='起个名字吧';return;}
+  try{
+    var r=await fetch(BASE+'/api/v1/visitor/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({invite_code:code,name:name,avatar_emoji:avatar})
+    });
+    var d=await r.json();
+    if(!r.ok){err.textContent=d.detail||'注册失败';return;}
+    session={role:'visitor',token:d.token,name:d.name,location:d.location,avatar:avatar};
+    localStorage.setItem('yqx_session',JSON.stringify(session));
+    enterApp();
+  }catch(e){err.textContent='网络错误';}
+}
+
+async function loginOwner(){
+  var pass=document.getElementById('owner-pass').value;
+  var err=document.getElementById('err-owner');
+  err.textContent='';
+  try{
+    var r=await fetch(BASE+'/api/v1/visitor/owner/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:pass})
+    });
+    var d=await r.json();
+    if(!r.ok){err.textContent=d.detail||'密码不对';return;}
+    session={role:'owner',name:'叶枔枖',location:d.location};
+    localStorage.setItem('yqx_session',JSON.stringify(session));
+    enterApp();
+  }catch(e){err.textContent='网络错误';}
+}
+
+function enterApp(){
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('h-user').textContent=session.name;
+  if(session.role==='owner'){
+    document.getElementById('admin-panel').style.display='';
+  }
+  document.getElementById('cl-bar').style.display='';
+  loadAll();
+  setInterval(refresh,30000);
+}
+
+async function doLogout(){
+  try{
+    if(session.role==='owner'){
+      await fetch(BASE+'/api/v1/visitor/owner/offline',{method:'POST'});
+    }else if(session.token){
+      await fetch(BASE+'/api/v1/visitor/offline',{method:'POST',headers:{'X-Visitor-Token':session.token}});
+    }
+  }catch(e){}
+  localStorage.removeItem('yqx_session');
+  location.reload();
+}
+
+// ── 数据加载 ──
+async function loadAll(){
+  await fetchMap();
+  await fetchState();
+  await fetchResidents();
+  await fetchVisitors();
+  updateCurrentLocation();
+}
+async function refresh(){
+  await fetchState();
+  await fetchMap();
+  await fetchResidents();
+  await fetchVisitors();
+  updateCurrentLocation();
 }
 
 async function fetchState(){
-try{
-var r=await fetch(BASE+'/api/v1/world/state');
-var d=await r.json();
-document.getElementById('s-time').textContent=d.time?d.time.substring(11,16):'--:--';
-document.getElementById('s-weather').textContent=(WEATHER_MAP[d.weather.type]||d.weather.type)+(d.weather.temp!=null?' '+Math.round(d.weather.temp)+'°C':'');
-document.getElementById('s-season').textContent=SEASON_MAP[d.season]||d.season;
-document.getElementById('s-tick').textContent=d.tick_count;
-var tags=document.getElementById('tags');
-tags.innerHTML='';
-function addTag(text,on){var t=document.createElement('span');t.className='tag'+(on?'':' off');t.textContent=text;tags.appendChild(t);}
-addTag('萱草 '+(d.xuancao==='open'?'开':'合'),d.xuancao==='open');
-addTag('风铃草 '+(d.wind_chime_sway?'摇':'静'),d.wind_chime_sway);
-addTag('桂花 '+(d.osmanthus_bloom?'开':'未开'),d.osmanthus_bloom);
-var yt=document.createElement('span');yt.className='tag'+(d.yinyin_online?'':' offline');yt.textContent='枔枔 '+(d.yinyin_online?'在线':'离线');tags.appendChild(yt);
-var ec=document.getElementById('events-container');
-if(d.active_events&&d.active_events.length>0){
-ec.innerHTML='';
-d.active_events.forEach(function(e){
-var div=document.createElement('div');div.className='event';
-div.textContent=e.description;
-if(e.expires_at){var sp=document.createElement('span');sp.className='event-time';sp.textContent=e.expires_at.substring(11,16)+' 过期';div.appendChild(sp);}
-ec.appendChild(div);
-});
-}else{ec.innerHTML='<div class="event" style="color:#a0aec0">暂无事件</div>';}
-document.getElementById('status-text').textContent='tick #'+d.tick_count;
-document.getElementById('status-dot').style.background='#68d391';
-}catch(e){
-document.getElementById('status-text').textContent='offline';
-document.getElementById('status-dot').style.background='#fc8181';
-}
+  try{
+    var r=await fetch(BASE+'/api/v1/world/state');
+    var d=await r.json();
+    var bar=document.getElementById('status-bar');
+    bar.innerHTML='';
+    function addS(txt,cls){var s=document.createElement('span');s.className='status-item'+(cls?' '+cls:'');s.textContent=txt;bar.appendChild(s);}
+    addS(d.time?d.time.substring(11,16):'--:--');
+    addS(W_MAP[d.weather.type]||d.weather.type);
+    addS(S_MAP[d.season]||d.season);
+    addS('tick #'+d.tick_count);
+    addS('萱草 '+(d.xuancao==='open'?'开':'合'));
+    addS('风铃草 '+(d.wind_chime_sway?'摇':'静'));
+    if(d.osmanthus_bloom)addS('🌼 桂花开了');
+    addS('枔枔 '+(d.yinyin_online?'在':'不在'),d.yinyin_online?'':'offline');
+
+    var ec=document.getElementById('events-container');
+    if(d.active_events&&d.active_events.length>0){
+      ec.innerHTML='';
+      d.active_events.forEach(function(e){
+        var div=document.createElement('div');div.className='event-item';
+        div.textContent=e.description;
+        if(e.expires_at){var sp=document.createElement('span');sp.className='event-time';sp.textContent=e.expires_at.substring(11,16)+' 过期';div.appendChild(sp);}
+        ec.appendChild(div);
+      });
+    }else{ec.innerHTML='<div class="event-item" style="color:var(--dim)">安安静静的</div>';}
+  }catch(e){}
 }
 
 async function fetchMap(){
-try{
-var r=await fetch(BASE+'/api/v1/world/map');
-var d=await r.json();
-var mc=document.getElementById('map-container');
-mc.innerHTML='';
-var zones={};
-d.locations.forEach(function(loc){
-var z=loc.zone;if(!zones[z])zones[z]=[];
-zones[z].push(loc);
-});
-ZONE_ORDER.forEach(function(z){
-if(!zones[z])return;
-var zd=document.createElement('div');zd.className='zone';
-var zl=document.createElement('div');zl.className='zone-label';zl.textContent=ZONE_NAMES[z]||z;
-zd.appendChild(zl);
-var ld=document.createElement('div');ld.className='locs';
-zones[z].forEach(function(loc){
-var el=document.createElement('div');
-el.className='loc';
-if(loc.type==='private')el.classList.add('private');
-if(loc.occupants&&loc.occupants.length>0)el.classList.add('occupied');
-if(loc.description&&loc.description.indexOf('施工中')>=0)el.classList.add('wip');
-var nm=document.createElement('div');nm.className='loc-name';nm.textContent=loc.name;
-var oc=document.createElement('div');oc.className='loc-occ';
-if(loc.occupants&&loc.occupants.length>0){
-oc.textContent=loc.occupants.map(function(o){return o.name}).join(' · ');
-}else{oc.textContent='—';}
-el.appendChild(nm);el.appendChild(oc);ld.appendChild(el);
-});
-zd.appendChild(ld);mc.appendChild(zd);
-});
-}catch(e){}
+  try{
+    var r=await fetch(BASE+'/api/v1/world/map');
+    var d=await r.json();
+    locData={};
+    locNames={};
+    d.locations.forEach(function(l){locData[l.id]=l;locNames[l.id]=l.name;});
+    renderMap(d.locations);
+  }catch(e){}
 }
 
+function renderMap(locations){
+  var mc=document.getElementById('map-container');
+  mc.innerHTML='';
+  var zones={};
+  locations.forEach(function(l){if(!zones[l.zone])zones[l.zone]=[];zones[l.zone].push(l);});
+
+  // 获取当前位置的connections
+  var myLoc=session.location;
+  var reachable=[];
+  if(myLoc&&locData[myLoc]){
+    reachable=locData[myLoc].connections||[];
+  }
+
+  ZONE_ORDER.forEach(function(z){
+    if(!zones[z])return;
+    var zd=document.createElement('div');zd.className='zone';
+    var zl=document.createElement('div');zl.className='zone-label';zl.textContent=ZONE_NAMES[z]||z;
+    zd.appendChild(zl);
+    var ld=document.createElement('div');ld.className='locs';
+    zones[z].forEach(function(loc){
+      var el=document.createElement('div');
+      el.className='loc';
+      var isHere=(loc.id===myLoc);
+      var isReachable=reachable.indexOf(loc.id)>=0;
+      var isWip=loc.description&&loc.description.indexOf('施工中')>=0;
+
+      if(isHere)el.classList.add('here');
+      else if(isWip)el.classList.add('wip');
+      else if(isReachable)el.classList.add('reachable');
+      else if(loc.type==='private'&&!isHere)el.classList.add('private-locked');
+
+      if(loc.occupants&&loc.occupants.length>0&&!isHere)el.classList.add('occupied');
+
+      var nm=document.createElement('div');nm.className='loc-name';nm.textContent=loc.name;
+      var oc=document.createElement('div');oc.className='loc-occ';
+      if(loc.occupants&&loc.occupants.length>0){
+        oc.textContent=loc.occupants.map(function(o){return o.name}).join(' · ');
+      }else{oc.textContent='—';}
+      el.appendChild(nm);el.appendChild(oc);
+
+      if(isReachable&&!isWip){
+        el.onclick=function(){moveTo(loc.id);};
+      }
+
+      ld.appendChild(el);
+    });
+    zd.appendChild(ld);mc.appendChild(zd);
+  });
+}
+
+function updateCurrentLocation(){
+  var loc=locData[session.location];
+  if(!loc){document.getElementById('cl-bar').style.display='none';return;}
+  document.getElementById('cl-bar').style.display='';
+  document.getElementById('cl-name').textContent=loc.name;
+  document.getElementById('cl-desc').textContent=loc.description||'';
+  var people=loc.occupants||[];
+  var others=people.filter(function(p){
+    if(session.role==='owner'&&p.id==='yinyin')return false;
+    if(session.role==='visitor'&&p.id===session.visitor_id)return false;
+    return true;
+  });
+  document.getElementById('cl-people').textContent=others.length>0?
+    others.map(function(p){return p.name}).join('、')+'也在这里':'就你一个人';
+}
+
+// ── 移动 ──
+async function moveTo(locId){
+  try{
+    var url,opts;
+    if(session.role==='owner'){
+      url=BASE+'/api/v1/visitor/owner/move';
+      opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location_id:locId})};
+    }else{
+      url=BASE+'/api/v1/visitor/move';
+      opts={method:'POST',headers:{'Content-Type':'application/json','X-Visitor-Token':session.token},body:JSON.stringify({location_id:locId})};
+    }
+    var r=await fetch(url,opts);
+    var d=await r.json();
+    if(!r.ok){showToast(d.detail||'走不过去');return;}
+    session.location=d.to;
+    localStorage.setItem('yqx_session',JSON.stringify(session));
+    showToast('走到了 '+d.location_name);
+    await refresh();
+  }catch(e){showToast('网络错误');}
+}
+
+// ── 居民 ──
 async function fetchResidents(){
-try{
-var r=await fetch(BASE+'/api/v1/residents');
-var d=await r.json();
-var rc=document.getElementById('residents-container');
-rc.innerHTML='';
-var colors={shen_yanqing:['#ebf8ff','#2c5282'],kebao:['#fefcbf','#744210'],yinyin:['#f0fff4','#276749']};
-d.residents.forEach(function(res){
-var el=document.createElement('div');el.className='resident';
-var av=document.createElement('div');av.className='avatar';
-var c=colors[res.id]||['#edf2f7','#4a5568'];
-av.style.background=c[0];av.style.color=c[1];
-av.textContent=res.name.charAt(0);
-var info=document.createElement('div');
-var nm=document.createElement('div');nm.className='res-name';nm.textContent=res.name;
-var dt=document.createElement('div');dt.className='res-detail';
-dt.textContent=res.current_location?(getLocName(res.current_location)+' · '+res.status):res.status;
-info.appendChild(nm);info.appendChild(dt);
-if(res.mood&&res.current_location){
-var mood=document.createElement('span');mood.className='res-mood';mood.textContent=res.mood;
-info.appendChild(mood);
-}
-el.appendChild(av);el.appendChild(info);rc.appendChild(el);
-});
-if(d.pets&&d.pets.length>0){
-var pr=document.createElement('div');pr.className='pet-row';
-d.pets.forEach(function(p){
-var el=document.createElement('div');el.className='pet';
-var av=document.createElement('div');av.className='pet-avatar';
-av.style.background=p.species==='cat'?'#fefcbf':'#ebf8ff';
-av.style.color=p.species==='cat'?'#744210':'#2c5282';
-av.textContent=p.name.charAt(0);
-var info=document.createElement('div');
-var nm=document.createElement('div');nm.className='pet-name';nm.textContent=p.name;
-var dt=document.createElement('div');dt.className='pet-detail';
-dt.textContent=getLocName(p.current_location)+' · '+p.status;
-info.appendChild(nm);info.appendChild(dt);
-el.appendChild(av);el.appendChild(info);pr.appendChild(el);
-});
-rc.appendChild(pr);
-}
-}catch(e){}
+  try{
+    var r=await fetch(BASE+'/api/v1/residents');
+    var d=await r.json();
+    var rc=document.getElementById('residents-container');
+    rc.innerHTML='';
+    var colors={shen_yanqing:['#ebf8ff','#2c5282','砚'],kebao:['#fefcbf','#744210','克'],yinyin:['#f0fff4','#276749','枖']};
+    d.residents.forEach(function(res){
+      if(res.id==='yinyin')return; // 枔枔单独处理
+      var el=document.createElement('div');el.className='person-row';
+      var av=document.createElement('div');av.className='person-avatar';
+      var c=colors[res.id]||['#edf2f7','#4a5568','?'];
+      av.style.background=c[0];av.style.color=c[1];av.textContent=c[2];
+      var info=document.createElement('div');
+      var nm=document.createElement('div');nm.className='person-name';nm.textContent=res.name;
+      var dt=document.createElement('div');dt.className='person-detail';
+      dt.textContent=(locNames[res.current_location]||res.current_location||'?')+' · '+res.status;
+      info.appendChild(nm);info.appendChild(dt);
+      if(res.mood){var mood=document.createElement('span');mood.className='person-mood';mood.textContent=res.mood;info.appendChild(mood);}
+      el.appendChild(av);el.appendChild(info);rc.appendChild(el);
+    });
+    if(d.pets&&d.pets.length>0){
+      var ps=document.createElement('div');ps.className='pet-section';
+      d.pets.forEach(function(p){
+        var el=document.createElement('div');el.className='pet';
+        var av=document.createElement('div');av.className='pet-av';
+        av.style.background=p.species==='cat'?'#fefcbf':'#ebf8ff';
+        av.style.color=p.species==='cat'?'#744210':'#2c5282';
+        av.textContent=p.species==='cat'?'🐱':'🐶';
+        var info=document.createElement('div');
+        var nm=document.createElement('div');nm.className='pet-name';nm.textContent=p.name;
+        var dt=document.createElement('div');dt.className='pet-detail';
+        dt.textContent=locNames[p.current_location]||p.current_location;
+        info.appendChild(nm);info.appendChild(dt);
+        el.appendChild(av);el.appendChild(info);ps.appendChild(el);
+      });
+      rc.appendChild(ps);
+    }
+  }catch(e){}
 }
 
-var locNames={};
-async function loadLocNames(){
-try{
-var r=await fetch(BASE+'/api/v1/world/map');
-var d=await r.json();
-d.locations.forEach(function(l){locNames[l.id]=l.name;});
-}catch(e){}
+// ── 访客 ──
+async function fetchVisitors(){
+  try{
+    var r=await fetch(BASE+'/api/v1/visitor/online');
+    var d=await r.json();
+    var vc=document.getElementById('visitors-container');
+    if(!d.visitors||d.visitors.length===0){vc.innerHTML='';return;}
+    vc.innerHTML='<div style="font-size:11px;color:var(--dim);margin-bottom:6px;border-top:1px solid #edf2f7;padding-top:8px">访客</div>';
+    d.visitors.forEach(function(v){
+      var el=document.createElement('div');el.className='person-row';
+      var av=document.createElement('div');av.className='person-avatar';
+      av.style.background='#f0fff4';av.style.color='#276749';
+      av.textContent=v.avatar_emoji||'🧑';av.style.fontSize='16px';
+      var info=document.createElement('div');
+      var nm=document.createElement('div');nm.className='person-name';nm.textContent=v.name;
+      var dt=document.createElement('div');dt.className='person-detail';
+      dt.textContent=locNames[v.current_location]||v.current_location;
+      info.appendChild(nm);info.appendChild(dt);
+      el.appendChild(av);el.appendChild(info);vc.appendChild(el);
+    });
+  }catch(e){}
 }
-function getLocName(id){return locNames[id]||id;}
 
+// ── 管理操作 ──
 async function manualTick(){
-log('触发 tick...');
-try{
-var r=await fetch(BASE+'/api/v1/admin/tick',{method:'POST'});
-var d=await r.json();
-log('tick #'+d.tick_number+' 完成');
-if(d.events_triggered&&d.events_triggered.length>0){
-d.events_triggered.forEach(function(e){log('事件: '+e.description);});
-}
-if(d.pet_moves&&d.pet_moves.length>0){
-d.pet_moves.forEach(function(m){log(m.pet+': '+m.from+' → '+m.to);});
-}
-refresh();
-}catch(e){log('tick 失败: '+e.message);}
+  log('触发 tick...');
+  try{
+    var r=await fetch(BASE+'/api/v1/admin/tick',{method:'POST'});
+    var d=await r.json();
+    log('tick #'+d.tick_number+' 完成');
+    refresh();
+  }catch(e){log('tick 失败');}
 }
 
-async function goOnline(){
-try{
-await fetch(BASE+'/api/v1/admin/yinyin/online',{method:'POST'});
-log('叶枔枖上线');refresh();
-}catch(e){log('失败: '+e.message);}
+async function generateInvite(){
+  try{
+    var r=await fetch(BASE+'/api/v1/visitor/invite/create',{method:'POST'});
+    var d=await r.json();
+    showToast('邀请码: '+d.code);
+    log('新邀请码: '+d.code);
+    if(document.getElementById('invite-panel').style.display!=='none')loadInvites();
+  }catch(e){showToast('生成失败');}
 }
 
-async function goOffline(){
-try{
-await fetch(BASE+'/api/v1/admin/yinyin/offline',{method:'POST'});
-log('叶枔枖下线');refresh();
-}catch(e){log('失败: '+e.message);}
+function toggleInvitePanel(){
+  var p=document.getElementById('invite-panel');
+  if(p.style.display==='none'){p.style.display='';loadInvites();}
+  else p.style.display='none';
 }
 
-async function refresh(){
-await fetchState();await fetchMap();await fetchResidents();
+async function loadInvites(){
+  try{
+    var r=await fetch(BASE+'/api/v1/visitor/invite/list');
+    var d=await r.json();
+    var el=document.getElementById('invite-list');
+    if(!d.codes||d.codes.length===0){el.innerHTML='<div style="font-size:12px;color:var(--dim)">还没有邀请码</div>';return;}
+    el.innerHTML='';
+    d.codes.forEach(function(c){
+      var row=document.createElement('div');row.className='invite-code-item';
+      row.innerHTML='<span class="invite-code-val">'+c.code+'</span><span class="invite-code-usage">'+c.used_count+'/'+c.max_uses+'</span>';
+      el.appendChild(row);
+    });
+  }catch(e){}
 }
 
-loadLocNames().then(refresh);
-setInterval(refresh,60000);
+// ── 工具 ──
+function log(msg){
+  var el=document.getElementById('log');
+  var d=document.createElement('div');d.className='log-entry';
+  d.textContent=new Date().toLocaleTimeString()+' '+msg;
+  el.insertBefore(d,el.firstChild);
+  if(el.children.length>8)el.removeChild(el.lastChild);
+}
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2200);
+}
 </script>
 </body>
 </html>
