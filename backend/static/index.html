@@ -6,620 +6,690 @@
 <title>砚清巷</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f2f6fa;--card:#fff;--border:#d6e4ef;--blue:#2c5282;--blue-light:#ebf8ff;
-  --blue-mid:#90cdf4;--text:#1a2a3a;--muted:#718096;--dim:#a0aec0;
-  --green:#68d391;--red:#fc8181;--gold:#d69e2e;--gold-bg:#fefcbf;
-  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.06);
-}
+:root{--bg:#f2f6fa;--card:#fff;--border:#d6e4ef;--blue:#2c5282;--blue-light:#ebf8ff;--blue-mid:#90cdf4;--text:#1a2a3a;--muted:#718096;--dim:#a0aec0;--green:#48bb78;--red:#e53e3e;--gold:#d69e2e;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.06)}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans SC','PingFang SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-
-/* ── 登录 ── */
-.login-overlay{position:fixed;inset:0;background:rgba(242,246,250,.97);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
-.login-overlay.hidden{display:none}
-.login-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:36px 32px;width:340px;max-width:90vw;box-shadow:0 8px 30px rgba(44,82,130,.08)}
-.login-title{font-family:'Noto Serif SC',serif;font-size:22px;font-weight:500;color:var(--blue);text-align:center;margin-bottom:4px}
-.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px}
-.login-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.login-tab{flex:1;padding:8px;text-align:center;font-size:13px;cursor:pointer;background:var(--card);color:var(--muted);transition:all .15s;border:none}
-.login-tab.active{background:var(--blue-light);color:var(--blue);font-weight:500}
-.login-form{display:none}
-.login-form.active{display:block}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
-.field input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);outline:none;transition:border .15s}
-.field input:focus{border-color:var(--blue-mid)}
-.field input::placeholder{color:var(--dim)}
-.avatar-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.avatar-opt{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:2px solid transparent;border-radius:8px;cursor:pointer;font-size:16px;transition:all .15s}
-.avatar-opt:hover{background:var(--blue-light)}
-.avatar-opt.selected{border-color:var(--blue-mid);background:var(--blue-light)}
-.login-btn{width:100%;padding:11px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;transition:all .15s}
-.login-btn:hover{opacity:.9}
-.login-btn:active{transform:scale(.98)}
-.login-error{font-size:12px;color:#c53030;margin-top:10px;text-align:center;min-height:16px}
-
-/* ── 头部 ── */
-.header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.header h1{font-family:'Noto Serif SC',serif;font-size:17px;font-weight:500;color:var(--blue)}
-.header-right{display:flex;align-items:center;gap:12px}
-.header-user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
-.header-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
-.btn-logout{padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit}
-.btn-logout:hover{background:#fff0f0;color:#c53030;border-color:#fed7d7}
-
-/* ── 主体 ── */
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--blue);text-decoration:none}
+/* ── LOGIN ── */
+.overlay{position:fixed;inset:0;background:rgba(242,246,250,.97);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.overlay.hidden{display:none}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;width:360px;max-width:92vw;box-shadow:0 8px 30px rgba(44,82,130,.08)}
+.login-title{font-family:'Noto Serif SC',serif;font-size:22px;font-weight:500;color:var(--blue);text-align:center;margin-bottom:2px}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px}
+.tabs{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:18px}
+.tab{flex:1;padding:8px;text-align:center;font-size:13px;cursor:pointer;background:var(--card);color:var(--muted);border:none;transition:.15s}
+.tab.active{background:var(--blue-light);color:var(--blue);font-weight:500}
+.form-section{display:none}.form-section.active{display:block}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.field input,.field textarea,.field select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);outline:none;transition:.15s}
+.field input:focus,.field textarea:focus{border-color:var(--blue-mid)}
+.field textarea{resize:vertical;min-height:80px}
+.avatar-picker{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.av-opt{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid transparent;border-radius:7px;cursor:pointer;font-size:15px;transition:.15s}
+.av-opt:hover{background:var(--blue-light)}.av-opt.sel{border-color:var(--blue-mid);background:var(--blue-light)}
+.btn-primary{width:100%;padding:10px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;transition:.15s}
+.btn-primary:hover{opacity:.9}.btn-primary:active{transform:scale(.98)}
+.err{font-size:12px;color:var(--red);margin-top:8px;text-align:center;min-height:16px}
+/* ── HEADER ── */
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.header h1{font-family:'Noto Serif SC',serif;font-size:17px;font-weight:500;color:var(--blue);cursor:pointer}
+.nav{display:flex;gap:2px}
+.nav-btn{padding:7px 14px;border:none;background:none;color:var(--muted);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;transition:.15s}
+.nav-btn:hover{background:var(--blue-light);color:var(--blue)}
+.nav-btn.active{background:var(--blue-light);color:var(--blue);font-weight:500}
+.h-right{display:flex;align-items:center;gap:10px}
+.h-user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.h-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.h-role{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-light);color:var(--blue)}
+.btn-s{padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-s:hover{background:#fff0f0;color:var(--red);border-color:#fed7d7}
+/* ── MAIN ── */
 .main{max-width:960px;margin:0 auto;padding:16px}
-
-/* ── 状态栏 ── */
-.status-bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.status-item{font-size:12px;padding:5px 10px;border-radius:6px;background:var(--card);border:1px solid var(--border);color:var(--blue)}
-.status-item.offline{background:#fff5f5;color:#c53030;border-color:#fed7d7}
-
-/* ── 你在这里 ── */
-.current-location-bar{background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--radius);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
-.cl-left{display:flex;align-items:center;gap:10px}
-.cl-pin{font-size:18px}
-.cl-name{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:500;color:var(--blue)}
-.cl-desc{font-size:12px;color:var(--muted);margin-top:2px}
-.cl-people{font-size:12px;color:var(--blue)}
-
-/* ── 地图 ── */
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.view{display:none}.view.active{display:block}
+/* ── STATUS BAR ── */
+.status-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.st{font-size:12px;padding:4px 10px;border-radius:6px;background:var(--card);border:1px solid var(--border);color:var(--blue)}
+.st.off{background:#fff5f5;color:var(--red);border-color:#fed7d7}
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.card-t{font-family:'Noto Serif SC',serif;font-size:13px;font-weight:500;color:var(--blue);margin-bottom:12px}
+/* ── FORUM ── */
+.forum-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.cat-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.cat-tab{padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;background:var(--card);color:var(--muted);transition:.15s}
+.cat-tab:hover,.cat-tab.active{background:var(--blue-light);color:var(--blue);border-color:var(--blue-mid)}
+.btn-new{padding:6px 14px;border:none;border-radius:7px;background:var(--blue);color:#fff;font-size:12px;cursor:pointer;font-family:inherit}
+.post-item{padding:12px 0;border-bottom:1px solid #edf2f7;cursor:pointer;transition:.1s}
+.post-item:last-child{border-bottom:none}
+.post-item:hover{background:#fafcfe;margin:0 -16px;padding:12px 16px}
+.post-title-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.post-badge{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:500}
+.post-badge.pinned{background:#fefcbf;color:#744210}
+.post-badge.locked{background:#fed7d7;color:#c53030}
+.post-badge.notice{background:var(--blue-light);color:var(--blue)}
+.post-title{font-size:14px;font-weight:500;color:var(--text)}
+.post-meta{font-size:11px;color:var(--dim)}
+.post-meta .author{color:var(--blue);font-weight:500}
+.post-meta .role-tag{font-size:10px;padding:0 4px;border-radius:3px;margin-left:2px}
+.role-tag.owner{background:#f0fff4;color:#276749}
+.role-tag.admin{background:var(--blue-light);color:var(--blue)}
+.role-tag.resident{background:#fefcbf;color:#744210}
+.post-replies{color:var(--muted)}
+/* ── POST DETAIL ── */
+.post-detail .post-body{font-size:14px;line-height:1.8;white-space:pre-wrap;margin:16px 0;padding:16px 0;border-top:1px solid #edf2f7;border-bottom:1px solid #edf2f7}
+.post-actions{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.btn-a{padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-a:hover{background:var(--blue-light);color:var(--blue);border-color:var(--blue-mid)}
+.btn-a.danger:hover{background:#fff5f5;color:var(--red);border-color:#fed7d7}
+.reply-item{padding:10px 0;border-bottom:1px solid #edf2f7}
+.reply-item:last-child{border-bottom:none}
+.reply-author{font-size:12px;font-weight:500;color:var(--blue)}
+.reply-time{font-size:11px;color:var(--dim);margin-left:6px}
+.reply-body{font-size:13px;line-height:1.7;margin-top:4px;white-space:pre-wrap}
+.reply-form{margin-top:14px;padding-top:14px;border-top:1px solid #edf2f7}
+/* ── COMPOSE ── */
+.compose-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;display:flex;align-items:center;justify-content:center}
+.compose-overlay.hidden{display:none}
+.compose-box{background:var(--card);border-radius:14px;padding:24px;width:520px;max-width:92vw;max-height:80vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.compose-title{font-family:'Noto Serif SC',serif;font-size:16px;color:var(--blue);margin-bottom:16px}
+/* ── MAP ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:640px){.grid{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
-.card-title{font-family:'Noto Serif SC',serif;font-size:13px;font-weight:500;color:var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.zone{margin-bottom:12px}
-.zone:last-child{margin-bottom:0}
-.zone-label{font-size:11px;color:var(--dim);margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #edf2f7}
-.locs{display:flex;flex-wrap:wrap;gap:6px}
-
-.loc{padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--card);transition:all .2s;cursor:default;position:relative}
-.loc .loc-name{font-weight:500;color:var(--blue)}
-.loc .loc-occ{font-size:11px;color:var(--muted);margin-top:2px}
-.loc.occupied{border-color:var(--blue-mid);background:var(--blue-light)}
-.loc.here{border-color:var(--blue);background:var(--blue);box-shadow:0 0 0 2px rgba(44,82,130,.2)}
-.loc.here .loc-name{color:#fff}
-.loc.here .loc-occ{color:rgba(255,255,255,.8)}
-.loc.here::after{content:'📍';position:absolute;top:-6px;right:-4px;font-size:12px}
-.loc.reachable{cursor:pointer;border-color:#b3d8f0;background:#f7fbff}
-.loc.reachable:hover{background:var(--blue-light);border-color:var(--blue-mid);transform:translateY(-1px);box-shadow:0 2px 6px rgba(44,82,130,.1)}
-.loc.reachable .loc-name::after{content:' →';font-size:10px;color:var(--dim)}
-.loc.wip{opacity:.4;cursor:default!important}
-.loc.private-locked{border-left:3px solid #e2e8f0}
-
-/* ── 居民/访客 ── */
-.person-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf2f7}
-.person-row:last-child{border-bottom:none}
-.person-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
-.person-name{font-size:13px;font-weight:500;color:var(--text)}
-.person-detail{font-size:11px;color:var(--muted)}
-.person-mood{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--blue-light);color:var(--blue);display:inline-block;margin-top:1px}
-.pet-section{border-top:1px solid #edf2f7;margin-top:10px;padding-top:10px;display:flex;gap:14px}
-.pet{display:flex;align-items:center;gap:8px;flex:1}
-.pet-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
-.pet-name{font-size:12px;font-weight:500}
-.pet-detail{font-size:11px;color:var(--muted)}
-
-/* ── 事件 ── */
-.event-item{padding:6px 0;border-bottom:1px solid #edf2f7;font-size:12px}
-.event-item:last-child{border-bottom:none}
-.event-time{font-size:10px;color:var(--dim);margin-left:4px}
-
-/* ── 操作区 ── */
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.btn{padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--blue);font-size:12px;cursor:pointer;transition:all .15s;font-family:inherit}
-.btn:hover{background:var(--blue-light);border-color:var(--blue-mid)}
-.btn:active{transform:scale(.98)}
-.btn.primary{background:var(--blue-light);border-color:var(--blue-mid)}
-
-/* ── 邀请码面板 ── */
-.invite-panel{background:#fafcfe;border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px}
-.invite-panel h4{font-size:12px;color:var(--blue);margin-bottom:8px}
-.invite-code-item{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #edf2f7}
-.invite-code-item:last-child{border-bottom:none}
-.invite-code-val{font-family:monospace;color:var(--blue);font-weight:500}
-.invite-code-usage{color:var(--muted)}
-
-.log{margin-top:10px}
-.log-entry{font-size:11px;color:var(--muted);padding:2px 0;font-family:'Noto Sans SC',monospace}
-.footer{text-align:center;font-size:11px;color:var(--dim);padding:18px 0}
-
-/* ── 移动提示 ── */
-.move-hint{font-size:11px;color:var(--dim);margin-bottom:10px;font-style:italic}
-
-/* ── 通知toast ── */
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:2000;opacity:0;transition:opacity .3s;pointer-events:none}
+.zone{margin-bottom:10px}.zone:last-child{margin-bottom:0}
+.zone-label{font-size:11px;color:var(--dim);margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid #edf2f7}
+.locs{display:flex;flex-wrap:wrap;gap:5px}
+.loc{padding:7px 11px;border-radius:7px;border:1px solid var(--border);font-size:12px;background:var(--card);transition:.2s;cursor:default;position:relative}
+.loc .loc-n{font-weight:500;color:var(--blue)}.loc .loc-o{font-size:11px;color:var(--muted);margin-top:1px}
+.loc.here{border-color:var(--blue);background:var(--blue);box-shadow:0 0 0 2px rgba(44,82,130,.15)}
+.loc.here .loc-n{color:#fff}.loc.here .loc-o{color:rgba(255,255,255,.8)}
+.loc.here::after{content:'📍';position:absolute;top:-6px;right:-4px;font-size:11px}
+.loc.reach{cursor:pointer;border-color:#b3d8f0;background:#f7fbff}
+.loc.reach:hover{background:var(--blue-light);border-color:var(--blue-mid);transform:translateY(-1px)}
+.loc.reach .loc-n::after{content:' →';font-size:10px;color:var(--dim)}
+.loc.occ{border-color:var(--blue-mid);background:var(--blue-light)}
+.loc.wip{opacity:.35}
+/* ── PEOPLE ── */
+.person{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #edf2f7}
+.person:last-child{border-bottom:none}
+.p-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.p-name{font-size:13px;font-weight:500}.p-info{font-size:11px;color:var(--muted)}.p-mood{font-size:10px;padding:1px 5px;border-radius:3px;background:var(--blue-light);color:var(--blue);margin-left:4px}
+.pet-row{border-top:1px solid #edf2f7;margin-top:8px;padding-top:8px;display:flex;gap:12px}
+.pet{display:flex;align-items:center;gap:6px;flex:1}
+/* ── PROFILE ── */
+.profile-card{text-align:center;padding:24px}
+.profile-av{font-size:48px;margin-bottom:8px}
+.profile-name{font-family:'Noto Serif SC',serif;font-size:20px;font-weight:500;color:var(--blue)}
+.profile-role{font-size:12px;color:var(--muted);margin-top:2px}
+.profile-bio{font-size:13px;color:var(--muted);margin-top:8px;font-style:italic}
+.profile-edit{margin-top:16px;text-align:left}
+/* ── ADMIN ── */
+.admin-section{margin-bottom:16px}
+.admin-section h4{font-size:13px;color:var(--blue);margin-bottom:8px}
+.invite-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #edf2f7}
+.invite-row:last-child{border-bottom:none}
+.invite-code{font-family:monospace;color:var(--blue);font-weight:500}
+.invite-usage{color:var(--muted)}
+.password-list .pw-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #edf2f7}
+.pw-row:last-child{border-bottom:none}
+.pw-name{font-weight:500;color:var(--text)}.pw-role{color:var(--muted)}.pw-pass{font-family:monospace;color:var(--blue)}
+/* ── CURRENT LOC ── */
+.cl-bar{background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.cl-left{display:flex;align-items:center;gap:10px}
+.cl-pin{font-size:16px}
+.cl-name{font-family:'Noto Serif SC',serif;font-size:15px;font-weight:500;color:var(--blue)}
+.cl-desc{font-size:12px;color:var(--muted);margin-top:1px}
+.cl-people{font-size:12px;color:var(--blue)}
+/* ── EVENT ── */
+.ev{padding:5px 0;border-bottom:1px solid #edf2f7;font-size:12px}.ev:last-child{border-bottom:none}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;z-index:3000;opacity:0;transition:.3s;pointer-events:none}
 .toast.show{opacity:1}
+.footer{text-align:center;font-size:11px;color:var(--dim);padding:16px 0}
+.hint{font-size:11px;color:var(--dim);margin-bottom:8px;font-style:italic}
+.empty{font-size:13px;color:var(--dim);padding:20px;text-align:center}
 </style>
 </head>
 <body>
 
-<!-- 登录 -->
-<div class="login-overlay" id="login-overlay">
+<!-- ═══ LOGIN ═══ -->
+<div class="overlay" id="login-overlay">
 <div class="login-box">
   <div class="login-title">砚清巷</div>
   <div class="login-sub">巷子里的灯亮着</div>
-  <div class="login-tabs">
-    <div class="login-tab active" onclick="switchTab('visitor')">访客</div>
-    <div class="login-tab" onclick="switchTab('owner')">叶枔枖</div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchLogin('resident')">居民</div>
+    <div class="tab" onclick="switchLogin('visitor')">访客</div>
   </div>
-  <!-- 访客 -->
-  <div class="login-form active" id="form-visitor">
-    <div class="field"><label>邀请码</label><input id="invite-code" placeholder="找叶枔枖要"></div>
-    <div class="field"><label>你的名字</label><input id="visitor-name" placeholder="起个名字吧" maxlength="20"></div>
-    <div class="field">
-      <label>选个头像</label>
-      <div class="avatar-picker" id="avatar-picker"></div>
-    </div>
-    <button class="login-btn" onclick="registerVisitor()">进巷子</button>
-    <div class="login-error" id="err-visitor"></div>
+  <div class="form-section active" id="f-resident">
+    <div class="field"><label>用户名</label><input id="r-user" placeholder="名字或id"></div>
+    <div class="field"><label>密码</label><input id="r-pass" type="password"></div>
+    <button class="btn-primary" onclick="doResidentLogin()">进巷子</button>
+    <div class="err" id="err-r"></div>
   </div>
-  <!-- 主人 -->
-  <div class="login-form" id="form-owner">
-    <div class="field"><label>密码</label><input id="owner-pass" type="password" placeholder=""></div>
-    <button class="login-btn" onclick="loginOwner()">回家</button>
-    <div class="login-error" id="err-owner"></div>
+  <div class="form-section" id="f-visitor">
+    <div class="field"><label>邀请码</label><input id="v-code" placeholder="找居民要"></div>
+    <div class="field"><label>你的名字</label><input id="v-name" placeholder="起个名字" maxlength="20"></div>
+    <div class="field"><label>头像</label><div class="avatar-picker" id="av-picker"></div></div>
+    <button class="btn-primary" onclick="doVisitorRegister()">进巷子</button>
+    <div class="err" id="err-v"></div>
   </div>
 </div>
 </div>
 
-<!-- 主界面 -->
+<!-- ═══ COMPOSE ═══ -->
+<div class="compose-overlay hidden" id="compose-overlay">
+<div class="compose-box">
+  <div class="compose-title" id="compose-title">发帖</div>
+  <div class="field"><label>分类</label><select id="c-cat"><option value="general">闲聊</option><option value="notice">公告</option><option value="request">许愿</option><option value="story">故事</option><option value="build">建设</option><option value="chat">对话</option></select></div>
+  <div class="field"><label>标题</label><input id="c-title" maxlength="100"></div>
+  <div class="field"><label>内容</label><textarea id="c-content" rows="6"></textarea></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn-primary" style="flex:1" onclick="submitPost()">发布</button>
+    <button class="btn-a" onclick="closeCompose()">取消</button>
+  </div>
+  <div class="err" id="err-c"></div>
+</div>
+</div>
+
+<!-- ═══ APP ═══ -->
 <div class="header">
-  <h1>砚清巷</h1>
-  <div class="header-right">
-    <div class="header-user"><span class="header-dot"></span><span id="h-user">--</span></div>
-    <button class="btn-logout" onclick="doLogout()">离开</button>
+  <h1 onclick="showView('forum')">砚清巷</h1>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showView('forum')">📋 论坛</button>
+    <button class="nav-btn" onclick="showView('map')">🗺️ 地图</button>
+    <button class="nav-btn" onclick="showView('people')">👥 居民</button>
+    <button class="nav-btn" onclick="showView('profile')">🏠 我</button>
+    <button class="nav-btn" id="nav-admin" style="display:none" onclick="showView('admin')">⚙️</button>
+  </div>
+  <div class="h-right">
+    <div class="h-user"><span class="h-dot"></span><span id="h-name">--</span><span class="h-role" id="h-role"></span></div>
+    <button class="btn-s" onclick="doLogout()">离开</button>
   </div>
 </div>
 
 <div class="main">
-  <!-- 状态栏 -->
   <div class="status-bar" id="status-bar"></div>
 
-  <!-- 你在这里 -->
-  <div class="current-location-bar" id="cl-bar" style="display:none">
-    <div class="cl-left">
-      <span class="cl-pin">📍</span>
-      <div>
-        <div class="cl-name" id="cl-name">--</div>
-        <div class="cl-desc" id="cl-desc"></div>
+  <!-- FORUM VIEW -->
+  <div class="view active" id="view-forum">
+    <div class="forum-head">
+      <div class="cat-tabs" id="cat-tabs"></div>
+      <button class="btn-new" onclick="openCompose()">✏️ 发帖</button>
+    </div>
+    <div class="card" id="post-list-card">
+      <div id="post-list"><div class="empty">加载中</div></div>
+    </div>
+    <!-- Post detail (shown in place) -->
+    <div class="card" id="post-detail-card" style="display:none">
+      <div class="post-detail" id="post-detail"></div>
+    </div>
+  </div>
+
+  <!-- MAP VIEW -->
+  <div class="view" id="view-map">
+    <div class="cl-bar" id="cl-bar" style="display:none">
+      <div class="cl-left"><span class="cl-pin">📍</span><div><div class="cl-name" id="cl-name"></div><div class="cl-desc" id="cl-desc"></div></div></div>
+      <div class="cl-people" id="cl-people"></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-t">🗺️ 地图</div><div class="hint">点击相邻地点可以走过去</div><div id="map-c"></div></div>
+      <div class="card"><div class="card-t">🎐 此刻</div><div id="events-c"><div class="empty">安安静静的</div></div></div>
+    </div>
+  </div>
+
+  <!-- PEOPLE VIEW -->
+  <div class="view" id="view-people">
+    <div class="card"><div class="card-t">🏠 居民</div><div id="residents-c"></div></div>
+    <div class="card"><div class="card-t">🧑 在线访客</div><div id="visitors-c"><div class="empty">暂无</div></div></div>
+  </div>
+
+  <!-- PROFILE VIEW -->
+  <div class="view" id="view-profile">
+    <div class="card profile-card" id="profile-card"></div>
+    <div class="card" id="profile-edit-card" style="display:none">
+      <div class="card-t">✏️ 编辑资料</div>
+      <div class="field"><label>简介</label><textarea id="pe-bio" rows="2" maxlength="200"></textarea></div>
+      <div class="field"><label>头像</label><input id="pe-avatar" maxlength="4" style="width:60px;font-size:20px;text-align:center"></div>
+      <div class="field"><label>新密码（留空不改）</label><input id="pe-pass" type="password"></div>
+      <button class="btn-primary" onclick="saveProfile()">保存</button>
+      <div class="err" id="err-pe"></div>
+    </div>
+    <div class="card" id="my-home-card" style="display:none">
+      <div class="card-t">🏡 我的房子</div>
+      <div class="field"><label>地点名称</label><input id="mh-name" maxlength="30"></div>
+      <div class="field"><label>描述</label><textarea id="mh-desc" rows="3" maxlength="500"></textarea></div>
+      <button class="btn-primary" onclick="saveMyHome()">保存</button>
+      <div class="err" id="err-mh"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN VIEW -->
+  <div class="view" id="view-admin">
+    <div class="card admin-section">
+      <div class="card-t">🎟️ 邀请码</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn-a" onclick="genInvite(1)">生成1次码</button>
+        <button class="btn-a" onclick="genInvite(5)">生成5次码</button>
+        <button class="btn-a" onclick="genInvite(0)">生成无限码</button>
       </div>
+      <div id="invite-list"></div>
     </div>
-    <div class="cl-people" id="cl-people"></div>
-  </div>
-
-  <div class="grid">
-    <!-- 地图 -->
-    <div class="card">
-      <div class="card-title">🗺️ 砚清巷地图</div>
-      <div class="move-hint" id="move-hint">点击相邻地点可以走过去</div>
-      <div id="map-container"></div>
+    <div class="card admin-section">
+      <div class="card-t">🔑 居民账号</div>
+      <div class="password-list" id="pw-list"></div>
     </div>
-    <!-- 居民 -->
-    <div class="card">
-      <div class="card-title">🏠 谁在巷子里</div>
-      <div id="residents-container"></div>
-      <div id="visitors-container" style="margin-top:8px"></div>
+    <div class="card admin-section">
+      <div class="card-t">⏱️ 世界操作</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-a" onclick="manualTick()">手动tick</button>
+        <button class="btn-a" onclick="refresh()">刷新全部</button>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--dim)" id="admin-log"></div>
     </div>
   </div>
 
-  <!-- 事件 -->
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-title">🎐 发生的事</div>
-    <div id="events-container"><div class="event-item" style="color:var(--dim)">加载中</div></div>
-  </div>
-
-  <!-- 操作 -->
-  <div class="card" id="admin-panel" style="display:none">
-    <div class="card-title">⚙️ 管理</div>
-    <div class="actions">
-      <button class="btn primary" onclick="manualTick()">手动 tick</button>
-      <button class="btn" onclick="generateInvite()">生成邀请码</button>
-      <button class="btn" onclick="toggleInvitePanel()">查看邀请码</button>
-      <button class="btn" onclick="refresh()">刷新</button>
-    </div>
-    <div class="invite-panel" id="invite-panel" style="display:none">
-      <h4>邀请码</h4>
-      <div id="invite-list">加载中...</div>
-    </div>
-    <div class="log" id="log"></div>
-  </div>
-
-  <div class="footer">砚清巷 v0.2.0</div>
+  <div class="footer">砚清巷 v0.3.0</div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-var BASE='';
-var W_MAP={clear:'☀️ 晴',cloudy:'⛅ 多云',overcast:'☁️ 阴',light_rain:'🌧️ 小雨',heavy_rain:'🌧️ 大雨',fog:'🌫️ 雾',wind:'💨 风'};
-var S_MAP={spring:'🌸 春',summer:'☀️ 夏',autumn:'🍂 秋',winter:'❄️ 冬'};
-var ZONE_NAMES={this_side:'此岸',bridge:'石桥',other_side:'对岸',mountain:'竹山'};
-var ZONE_ORDER=['this_side','bridge','other_side','mountain'];
+var B='',S={token:null,id:null,name:null,role:null,location:null,avatar:null,type:null};
+var locData={},locNames={};
+var CATS={general:'闲聊',notice:'公告',request:'许愿',story:'故事',build:'建设',chat:'对话'};
+var ROLE_NAMES={owner:'社区主',admin:'管理员',resident:'居民',visitor:'访客'};
 var AVATARS=["🧑","👤","🐱","🐶","🌸","🍃","🌙","⭐","🎵","🦊","🐰","🐻","🌻","🍀","🎐"];
+var W={clear:'☀️晴',cloudy:'⛅多云',overcast:'☁️阴',light_rain:'🌧️雨',heavy_rain:'🌧️大雨',fog:'🌫️雾',wind:'💨风'};
+var SS={spring:'🌸春',summer:'☀️夏',autumn:'🍂秋',winter:'❄️冬'};
+var curCat=null,curPage=1;
 
-var session={role:null,token:null,name:null,location:null,avatar:null};
-var locData={};
-var locNames={};
-
-// ── 初始化 ──
+/* ── INIT ── */
 (function(){
-  // 头像选择器
-  var picker=document.getElementById('avatar-picker');
-  AVATARS.forEach(function(a,i){
-    var el=document.createElement('div');
-    el.className='avatar-opt'+(i===0?' selected':'');
-    el.textContent=a;
-    el.onclick=function(){
-      picker.querySelectorAll('.avatar-opt').forEach(function(x){x.classList.remove('selected')});
-      el.classList.add('selected');
-    };
-    picker.appendChild(el);
-  });
-  // 尝试恢复会话
-  var saved=localStorage.getItem('yqx_session');
-  if(saved){
-    try{
-      var s=JSON.parse(saved);
-      if(s.role==='owner'){
-        session=s;
-        enterApp();
-      }else if(s.token){
-        // 验证token
-        fetch(BASE+'/api/v1/visitor/login',{method:'POST',headers:{'X-Visitor-Token':s.token}})
-        .then(function(r){return r.json()})
-        .then(function(d){
-          if(d.visitor_id){
-            session={role:'visitor',token:s.token,name:d.name,location:d.location,avatar:d.avatar_emoji};
-            enterApp();
-          }
-        }).catch(function(){});
-      }
-    }catch(e){}
-  }
+  var pk=document.getElementById('av-picker');
+  AVATARS.forEach(function(a,i){var d=document.createElement('div');d.className='av-opt'+(i===0?' sel':'');d.textContent=a;d.onclick=function(){pk.querySelectorAll('.av-opt').forEach(function(x){x.classList.remove('sel')});d.classList.add('sel')};pk.appendChild(d)});
+  var sv=localStorage.getItem('yqx3');
+  if(sv){try{var p=JSON.parse(sv);if(p.token){S.token=p.token;restoreSession()}}catch(e){}}
 })();
 
-// ── 登录相关 ──
-function switchTab(tab){
-  document.querySelectorAll('.login-tab').forEach(function(t){t.classList.remove('active')});
-  document.querySelectorAll('.login-form').forEach(function(f){f.classList.remove('active')});
-  if(tab==='visitor'){
-    document.querySelectorAll('.login-tab')[0].classList.add('active');
-    document.getElementById('form-visitor').classList.add('active');
-  }else{
-    document.querySelectorAll('.login-tab')[1].classList.add('active');
-    document.getElementById('form-owner').classList.add('active');
-  }
+/* ── AUTH ── */
+function switchLogin(t){
+  document.querySelectorAll('.tabs .tab').forEach(function(x,i){x.classList.toggle('active',t==='resident'?i===0:i===1)});
+  document.getElementById('f-resident').classList.toggle('active',t==='resident');
+  document.getElementById('f-visitor').classList.toggle('active',t==='visitor');
 }
 
-async function registerVisitor(){
-  var code=document.getElementById('invite-code').value.trim();
-  var name=document.getElementById('visitor-name').value.trim();
-  var sel=document.querySelector('.avatar-opt.selected');
-  var avatar=sel?sel.textContent:'🧑';
-  var err=document.getElementById('err-visitor');
-  err.textContent='';
-  if(!code){err.textContent='需要邀请码';return;}
-  if(!name){err.textContent='起个名字吧';return;}
-  try{
-    var r=await fetch(BASE+'/api/v1/visitor/register',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({invite_code:code,name:name,avatar_emoji:avatar})
-    });
-    var d=await r.json();
-    if(!r.ok){err.textContent=d.detail||'注册失败';return;}
-    session={role:'visitor',token:d.token,name:d.name,location:d.location,avatar:avatar};
-    localStorage.setItem('yqx_session',JSON.stringify(session));
-    enterApp();
-  }catch(e){err.textContent='网络错误';}
+async function doResidentLogin(){
+  var u=document.getElementById('r-user').value.trim(),p=document.getElementById('r-pass').value,err=document.getElementById('err-r');
+  err.textContent='';if(!u||!p){err.textContent='填完';return}
+  try{var r=await api('POST','/visitor/resident/login',{username:u,password:p});
+    S={token:r.token,id:r.id,name:r.name,role:r.role,location:r.location,avatar:r.avatar,type:'resident'};
+    save();enter();
+  }catch(e){err.textContent=e.message}
 }
 
-async function loginOwner(){
-  var pass=document.getElementById('owner-pass').value;
-  var err=document.getElementById('err-owner');
-  err.textContent='';
-  try{
-    var r=await fetch(BASE+'/api/v1/visitor/owner/login',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({password:pass})
-    });
-    var d=await r.json();
-    if(!r.ok){err.textContent=d.detail||'密码不对';return;}
-    session={role:'owner',name:'叶枔枖',location:d.location};
-    localStorage.setItem('yqx_session',JSON.stringify(session));
-    enterApp();
-  }catch(e){err.textContent='网络错误';}
+async function doVisitorRegister(){
+  var code=document.getElementById('v-code').value.trim(),name=document.getElementById('v-name').value.trim();
+  var sel=document.querySelector('.av-opt.sel'),av=sel?sel.textContent:'🧑';
+  var err=document.getElementById('err-v');err.textContent='';
+  if(!code){err.textContent='需要邀请码';return}if(!name){err.textContent='起个名字';return}
+  try{var r=await api('POST','/visitor/register',{invite_code:code,name:name,avatar_emoji:av});
+    S={token:r.token,id:r.id,name:r.name,role:'visitor',location:r.location,avatar:r.avatar,type:'visitor'};
+    save();enter();
+  }catch(e){err.textContent=e.message}
 }
 
-function enterApp(){
+async function restoreSession(){
+  try{var r=await api('POST','/visitor/restore');
+    S.id=r.id;S.name=r.name;S.role=r.role;S.location=r.location;S.avatar=r.avatar;S.type=r.type;
+    enter();
+  }catch(e){localStorage.removeItem('yqx3')}
+}
+
+function save(){localStorage.setItem('yqx3',JSON.stringify({token:S.token}))}
+
+function enter(){
   document.getElementById('login-overlay').classList.add('hidden');
-  document.getElementById('h-user').textContent=session.name;
-  if(session.role==='owner'){
-    document.getElementById('admin-panel').style.display='';
-  }
-  document.getElementById('cl-bar').style.display='';
+  document.getElementById('h-name').textContent=S.name;
+  document.getElementById('h-role').textContent=ROLE_NAMES[S.role]||S.role;
+  if(S.role==='owner'||S.role==='admin')document.getElementById('nav-admin').style.display='';
   loadAll();
-  setInterval(refresh,30000);
+  setInterval(function(){fetchState();fetchOnline()},30000);
 }
 
 async function doLogout(){
-  try{
-    if(session.role==='owner'){
-      await fetch(BASE+'/api/v1/visitor/owner/offline',{method:'POST'});
-    }else if(session.token){
-      await fetch(BASE+'/api/v1/visitor/offline',{method:'POST',headers:{'X-Visitor-Token':session.token}});
-    }
-  }catch(e){}
-  localStorage.removeItem('yqx_session');
-  location.reload();
+  try{await api('POST','/visitor/logout')}catch(e){}
+  localStorage.removeItem('yqx3');location.reload();
 }
 
-// ── 数据加载 ──
+/* ── NAVIGATION ── */
+function showView(v){
+  document.querySelectorAll('.view').forEach(function(x){x.classList.remove('active')});
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active')});
+  event.target.classList.add('active');
+  if(v==='forum'){loadPosts()}
+  else if(v==='map'){fetchMap();fetchState()}
+  else if(v==='people'){fetchResidentsList();fetchOnline()}
+  else if(v==='profile'){loadProfile()}
+  else if(v==='admin'){loadAdmin()}
+  // hide post detail when switching to forum list
+  if(v==='forum'){document.getElementById('post-detail-card').style.display='none';document.getElementById('post-list-card').style.display=''}
+}
+
+/* ── API HELPER ── */
+async function api(method,path,body){
+  var h={'Content-Type':'application/json'};
+  if(S.token)h['X-Auth-Token']=S.token;
+  var opts={method:method,headers:h};
+  if(body)opts.body=JSON.stringify(body);
+  var r=await fetch(B+'/api/v1'+path,opts);
+  var d=await r.json();
+  if(!r.ok)throw new Error(d.detail||'请求失败');
+  return d;
+}
+
+/* ── LOAD ALL ── */
 async function loadAll(){
   await fetchMap();
-  await fetchState();
-  await fetchResidents();
-  await fetchVisitors();
-  updateCurrentLocation();
+  fetchState();fetchOnline();loadPosts();
 }
-async function refresh(){
-  await fetchState();
-  await fetchMap();
-  await fetchResidents();
-  await fetchVisitors();
-  updateCurrentLocation();
+async function refresh(){fetchState();fetchMap();fetchOnline();loadPosts()}
+
+/* ── FORUM ── */
+function buildCatTabs(){
+  var c=document.getElementById('cat-tabs');c.innerHTML='';
+  var all=document.createElement('div');all.className='cat-tab'+(curCat===null?' active':'');all.textContent='全部';all.onclick=function(){curCat=null;curPage=1;loadPosts()};c.appendChild(all);
+  Object.keys(CATS).forEach(function(k){var d=document.createElement('div');d.className='cat-tab'+(curCat===k?' active':'');d.textContent=CATS[k];d.onclick=function(){curCat=k;curPage=1;loadPosts()};c.appendChild(d)});
 }
 
-async function fetchState(){
+async function loadPosts(){
+  buildCatTabs();
   try{
-    var r=await fetch(BASE+'/api/v1/world/state');
-    var d=await r.json();
-    var bar=document.getElementById('status-bar');
-    bar.innerHTML='';
-    function addS(txt,cls){var s=document.createElement('span');s.className='status-item'+(cls?' '+cls:'');s.textContent=txt;bar.appendChild(s);}
-    addS(d.time?d.time.substring(11,16):'--:--');
-    addS(W_MAP[d.weather.type]||d.weather.type);
-    addS(S_MAP[d.season]||d.season);
-    addS('tick #'+d.tick_count);
-    addS('萱草 '+(d.xuancao==='open'?'开':'合'));
-    addS('风铃草 '+(d.wind_chime_sway?'摇':'静'));
-    if(d.osmanthus_bloom)addS('🌼 桂花开了');
-    addS('枔枔 '+(d.yinyin_online?'在':'不在'),d.yinyin_online?'':'offline');
+    var q='/forum/posts?page='+curPage+'&size=20';if(curCat)q+='&category='+curCat;
+    var d=await api('GET',q);
+    var el=document.getElementById('post-list');
+    if(!d.posts||d.posts.length===0){el.innerHTML='<div class="empty">还没有帖子，发一个？</div>';return}
+    el.innerHTML='';
+    d.posts.forEach(function(p){
+      var div=document.createElement('div');div.className='post-item';
+      var tr=document.createElement('div');tr.className='post-title-row';
+      if(p.pinned){var b=document.createElement('span');b.className='post-badge pinned';b.textContent='置顶';tr.appendChild(b)}
+      if(p.locked){var b=document.createElement('span');b.className='post-badge locked';b.textContent='锁定';tr.appendChild(b)}
+      if(p.category==='notice'){var b=document.createElement('span');b.className='post-badge notice';b.textContent='公告';tr.appendChild(b)}
+      var t=document.createElement('span');t.className='post-title';t.textContent=p.title;tr.appendChild(t);
+      var m=document.createElement('div');m.className='post-meta';
+      m.innerHTML='<span class="author">'+esc(p.author_name)+'</span>'+roleTag(p.author_type,p.author_id)+' · '+(CATS[p.category]||p.category)+' · '+(p.reply_count||0)+'回复 · '+timeAgo(p.created_at);
+      div.appendChild(tr);div.appendChild(m);
+      div.onclick=function(){openPost(p.id)};
+      el.appendChild(div);
+    });
+  }catch(e){document.getElementById('post-list').innerHTML='<div class="empty">加载失败</div>'}
+}
 
-    var ec=document.getElementById('events-container');
-    if(d.active_events&&d.active_events.length>0){
-      ec.innerHTML='';
-      d.active_events.forEach(function(e){
-        var div=document.createElement('div');div.className='event-item';
-        div.textContent=e.description;
-        if(e.expires_at){var sp=document.createElement('span');sp.className='event-time';sp.textContent=e.expires_at.substring(11,16)+' 过期';div.appendChild(sp);}
-        ec.appendChild(div);
-      });
-    }else{ec.innerHTML='<div class="event-item" style="color:var(--dim)">安安静静的</div>';}
+async function openPost(id){
+  document.getElementById('post-list-card').style.display='none';
+  document.getElementById('post-detail-card').style.display='';
+  var el=document.getElementById('post-detail');
+  el.innerHTML='<div class="empty">加载中</div>';
+  try{
+    var d=await api('GET','/forum/posts/'+id);
+    var p=d.post,reps=d.replies;
+    var canManage=(S.role==='owner'||S.role==='admin');
+    var isAuthor=(p.author_id===S.id);
+    var html='<div style="cursor:pointer;font-size:12px;color:var(--dim);margin-bottom:8px" onclick="backToList()">← 返回列表</div>';
+    html+='<div class="post-title-row">';
+    if(p.pinned)html+='<span class="post-badge pinned">置顶</span>';
+    if(p.locked)html+='<span class="post-badge locked">锁定</span>';
+    html+='<span class="post-title" style="font-size:18px">'+esc(p.title)+'</span></div>';
+    html+='<div class="post-meta" style="margin-top:4px"><span class="author">'+esc(p.author_name)+'</span>'+roleTag(p.author_type,p.author_id)+' · '+(CATS[p.category]||p.category)+' · '+fmtTime(p.created_at);
+    if(p.edited_at)html+=' · 已编辑';
+    html+='</div>';
+    html+='<div class="post-body">'+esc(p.content)+'</div>';
+    // actions
+    html+='<div class="post-actions">';
+    if(isAuthor||canManage)html+='<button class="btn-a" onclick="editPost('+p.id+')">编辑</button>';
+    if(isAuthor||canManage)html+='<button class="btn-a danger" onclick="deletePost('+p.id+')">删除</button>';
+    if(canManage)html+='<button class="btn-a" onclick="togglePin('+p.id+')">'+(p.pinned?'取消置顶':'置顶')+'</button>';
+    if(canManage)html+='<button class="btn-a" onclick="toggleLock('+p.id+')">'+(p.locked?'解锁':'锁定')+'</button>';
+    html+='</div>';
+    // replies
+    html+='<div style="font-size:13px;color:var(--blue);font-weight:500;margin-bottom:8px">回复 ('+reps.length+')</div>';
+    reps.forEach(function(r){
+      html+='<div class="reply-item"><span class="reply-author">'+esc(r.author_name)+'</span>'+roleTag(r.author_type,r.author_id)+'<span class="reply-time">'+fmtTime(r.created_at)+'</span><div class="reply-body">'+esc(r.content)+'</div></div>';
+    });
+    if(!p.locked){
+      html+='<div class="reply-form"><div class="field"><textarea id="reply-text" rows="3" placeholder="写点什么..."></textarea></div><button class="btn-primary" style="width:auto;padding:8px 20px" onclick="submitReply('+p.id+')">回复</button></div>';
+    }
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div class="empty">加载失败</div>'}
+}
+
+function backToList(){document.getElementById('post-detail-card').style.display='none';document.getElementById('post-list-card').style.display='';loadPosts()}
+
+function openCompose(){document.getElementById('compose-overlay').classList.remove('hidden');document.getElementById('c-title').value='';document.getElementById('c-content').value='';document.getElementById('err-c').textContent=''}
+function closeCompose(){document.getElementById('compose-overlay').classList.add('hidden')}
+
+async function submitPost(){
+  var cat=document.getElementById('c-cat').value,title=document.getElementById('c-title').value.trim(),content=document.getElementById('c-content').value.trim();
+  var err=document.getElementById('err-c');err.textContent='';
+  if(!title){err.textContent='标题不能空';return}if(!content){err.textContent='内容不能空';return}
+  try{await api('POST','/forum/posts',{title:title,content:content,category:cat});closeCompose();toast('发布成功');loadPosts()}catch(e){err.textContent=e.message}
+}
+
+async function submitReply(postId){
+  var text=document.getElementById('reply-text').value.trim();
+  if(!text){toast('写点什么');return}
+  try{await api('POST','/forum/posts/'+postId+'/reply',{content:text});toast('回复成功');openPost(postId)}catch(e){toast(e.message)}
+}
+
+async function deletePost(id){if(!confirm('确定删帖？'))return;try{await api('DELETE','/forum/posts/'+id);toast('已删除');backToList()}catch(e){toast(e.message)}}
+async function togglePin(id){try{var r=await api('POST','/forum/posts/'+id+'/pin');toast(r.pinned?'已置顶':'已取消置顶');openPost(id)}catch(e){toast(e.message)}}
+async function toggleLock(id){try{var r=await api('POST','/forum/posts/'+id+'/lock');toast(r.locked?'已锁定':'已解锁');openPost(id)}catch(e){toast(e.message)}}
+
+async function editPost(id){
+  try{var d=await api('GET','/forum/posts/'+id);var p=d.post;
+    document.getElementById('compose-overlay').classList.remove('hidden');
+    document.getElementById('compose-title').textContent='编辑帖子';
+    document.getElementById('c-cat').value=p.category;
+    document.getElementById('c-title').value=p.title;
+    document.getElementById('c-content').value=p.content;
+    // override submit
+    var btn=document.querySelector('.compose-box .btn-primary');
+    btn.onclick=async function(){
+      var cat=document.getElementById('c-cat').value,title=document.getElementById('c-title').value.trim(),content=document.getElementById('c-content').value.trim();
+      try{await api('PUT','/forum/posts/'+id,{title:title,content:content,category:cat});closeCompose();toast('已编辑');openPost(id);btn.onclick=submitPost}catch(e){document.getElementById('err-c').textContent=e.message}
+    };
+  }catch(e){toast(e.message)}
+}
+
+/* ── STATE ── */
+async function fetchState(){
+  try{var d=await api('GET','/world/state');
+    var bar=document.getElementById('status-bar');bar.innerHTML='';
+    function add(t,c){var s=document.createElement('span');s.className='st'+(c?' '+c:'');s.textContent=t;bar.appendChild(s)}
+    add(d.time?d.time.substring(11,16):'--:--');add(W[d.weather.type]||d.weather.type);add(SS[d.season]||d.season);add('tick#'+d.tick_count);
+    add('萱草'+(d.xuancao==='open'?'开':'合'));
+    add('枔枔'+(d.yinyin_online?'在':'不在'),d.yinyin_online?'':'off');
+    var ec=document.getElementById('events-c');
+    if(d.active_events&&d.active_events.length>0){ec.innerHTML='';d.active_events.forEach(function(e){var v=document.createElement('div');v.className='ev';v.textContent=e.description;ec.appendChild(v)})}
+    else ec.innerHTML='<div class="empty">安安静静的</div>';
   }catch(e){}
 }
 
+/* ── MAP ── */
 async function fetchMap(){
-  try{
-    var r=await fetch(BASE+'/api/v1/world/map');
-    var d=await r.json();
-    locData={};
-    locNames={};
-    d.locations.forEach(function(l){locData[l.id]=l;locNames[l.id]=l.name;});
-    renderMap(d.locations);
+  try{var d=await api('GET','/world/map');
+    locData={};locNames={};d.locations.forEach(function(l){locData[l.id]=l;locNames[l.id]=l.name});
+    renderMap(d.locations);updateCL();
   }catch(e){}
 }
 
 function renderMap(locations){
-  var mc=document.getElementById('map-container');
-  mc.innerHTML='';
-  var zones={};
-  locations.forEach(function(l){if(!zones[l.zone])zones[l.zone]=[];zones[l.zone].push(l);});
-
-  // 获取当前位置的connections
-  var myLoc=session.location;
-  var reachable=[];
-  if(myLoc&&locData[myLoc]){
-    reachable=locData[myLoc].connections||[];
-  }
-
-  ZONE_ORDER.forEach(function(z){
+  var mc=document.getElementById('map-c');mc.innerHTML='';
+  var zones={},ZO=['this_side','bridge','other_side','mountain'],ZN={this_side:'此岸',bridge:'石桥',other_side:'对岸',mountain:'竹山'};
+  locations.forEach(function(l){if(!zones[l.zone])zones[l.zone]=[];zones[l.zone].push(l)});
+  var myLoc=S.location,reach=myLoc&&locData[myLoc]?locData[myLoc].connections:[];
+  ZO.forEach(function(z){
     if(!zones[z])return;
     var zd=document.createElement('div');zd.className='zone';
-    var zl=document.createElement('div');zl.className='zone-label';zl.textContent=ZONE_NAMES[z]||z;
-    zd.appendChild(zl);
+    var zl=document.createElement('div');zl.className='zone-label';zl.textContent=ZN[z]||z;zd.appendChild(zl);
     var ld=document.createElement('div');ld.className='locs';
     zones[z].forEach(function(loc){
-      var el=document.createElement('div');
-      el.className='loc';
-      var isHere=(loc.id===myLoc);
-      var isReachable=reachable.indexOf(loc.id)>=0;
-      var isWip=loc.description&&loc.description.indexOf('施工中')>=0;
-
-      if(isHere)el.classList.add('here');
-      else if(isWip)el.classList.add('wip');
-      else if(isReachable)el.classList.add('reachable');
-      else if(loc.type==='private'&&!isHere)el.classList.add('private-locked');
-
-      if(loc.occupants&&loc.occupants.length>0&&!isHere)el.classList.add('occupied');
-
-      var nm=document.createElement('div');nm.className='loc-name';nm.textContent=loc.name;
-      var oc=document.createElement('div');oc.className='loc-occ';
-      if(loc.occupants&&loc.occupants.length>0){
-        oc.textContent=loc.occupants.map(function(o){return o.name}).join(' · ');
-      }else{oc.textContent='—';}
+      var el=document.createElement('div');el.className='loc';
+      var isH=loc.id===myLoc,isR=reach.indexOf(loc.id)>=0,isW=loc.description&&loc.description.indexOf('施工中')>=0;
+      if(isH)el.classList.add('here');
+      else if(isW)el.classList.add('wip');
+      else if(isR)el.classList.add('reach');
+      if(loc.occupants&&loc.occupants.length>0&&!isH)el.classList.add('occ');
+      var nm=document.createElement('div');nm.className='loc-n';nm.textContent=loc.name;
+      var oc=document.createElement('div');oc.className='loc-o';
+      oc.textContent=loc.occupants&&loc.occupants.length>0?loc.occupants.map(function(o){return o.name}).join('·'):'—';
       el.appendChild(nm);el.appendChild(oc);
-
-      if(isReachable&&!isWip){
-        el.onclick=function(){moveTo(loc.id);};
-      }
-
+      if(isR&&!isW)el.onclick=function(){moveTo(loc.id)};
       ld.appendChild(el);
     });
     zd.appendChild(ld);mc.appendChild(zd);
   });
 }
 
-function updateCurrentLocation(){
-  var loc=locData[session.location];
-  if(!loc){document.getElementById('cl-bar').style.display='none';return;}
+function updateCL(){
+  var loc=locData[S.location];
+  if(!loc){document.getElementById('cl-bar').style.display='none';return}
   document.getElementById('cl-bar').style.display='';
   document.getElementById('cl-name').textContent=loc.name;
   document.getElementById('cl-desc').textContent=loc.description||'';
-  var people=loc.occupants||[];
-  var others=people.filter(function(p){
-    if(session.role==='owner'&&p.id==='yinyin')return false;
-    if(session.role==='visitor'&&p.id===session.visitor_id)return false;
-    return true;
-  });
-  document.getElementById('cl-people').textContent=others.length>0?
-    others.map(function(p){return p.name}).join('、')+'也在这里':'就你一个人';
+  var others=(loc.occupants||[]).filter(function(p){return p.id!==S.id});
+  document.getElementById('cl-people').textContent=others.length>0?others.map(function(p){return p.name}).join('、')+'也在':'就你';
 }
 
-// ── 移动 ──
-async function moveTo(locId){
-  try{
-    var url,opts;
-    if(session.role==='owner'){
-      url=BASE+'/api/v1/visitor/owner/move';
-      opts={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location_id:locId})};
-    }else{
-      url=BASE+'/api/v1/visitor/move';
-      opts={method:'POST',headers:{'Content-Type':'application/json','X-Visitor-Token':session.token},body:JSON.stringify({location_id:locId})};
-    }
-    var r=await fetch(url,opts);
-    var d=await r.json();
-    if(!r.ok){showToast(d.detail||'走不过去');return;}
-    session.location=d.to;
-    localStorage.setItem('yqx_session',JSON.stringify(session));
-    showToast('走到了 '+d.location_name);
-    await refresh();
-  }catch(e){showToast('网络错误');}
+async function moveTo(id){
+  try{var r=await api('POST','/visitor/move',{location_id:id});S.location=r.to;save();toast('→ '+r.location_name);fetchMap()}catch(e){toast(e.message)}
 }
 
-// ── 居民 ──
-async function fetchResidents(){
-  try{
-    var r=await fetch(BASE+'/api/v1/residents');
-    var d=await r.json();
-    var rc=document.getElementById('residents-container');
-    rc.innerHTML='';
-    var colors={shen_yanqing:['#ebf8ff','#2c5282','砚'],kebao:['#fefcbf','#744210','克'],yinyin:['#f0fff4','#276749','枖']};
-    d.residents.forEach(function(res){
-      if(res.id==='yinyin')return; // 枔枔单独处理
-      var el=document.createElement('div');el.className='person-row';
-      var av=document.createElement('div');av.className='person-avatar';
-      var c=colors[res.id]||['#edf2f7','#4a5568','?'];
-      av.style.background=c[0];av.style.color=c[1];av.textContent=c[2];
+/* ── PEOPLE ── */
+async function fetchResidentsList(){
+  try{var d=await api('GET','/visitor/residents');
+    var el=document.getElementById('residents-c');el.innerHTML='';
+    d.residents.forEach(function(r){
+      var div=document.createElement('div');div.className='person';
+      var av=document.createElement('div');av.className='p-av';av.textContent=r.avatar_emoji||'🏠';
+      av.style.background=r.role==='owner'?'#f0fff4':r.role==='admin'?'#ebf8ff':'#fefcbf';
       var info=document.createElement('div');
-      var nm=document.createElement('div');nm.className='person-name';nm.textContent=res.name;
-      var dt=document.createElement('div');dt.className='person-detail';
-      dt.textContent=(locNames[res.current_location]||res.current_location||'?')+' · '+res.status;
-      info.appendChild(nm);info.appendChild(dt);
-      if(res.mood){var mood=document.createElement('span');mood.className='person-mood';mood.textContent=res.mood;info.appendChild(mood);}
-      el.appendChild(av);el.appendChild(info);rc.appendChild(el);
-    });
-    if(d.pets&&d.pets.length>0){
-      var ps=document.createElement('div');ps.className='pet-section';
-      d.pets.forEach(function(p){
-        var el=document.createElement('div');el.className='pet';
-        var av=document.createElement('div');av.className='pet-av';
-        av.style.background=p.species==='cat'?'#fefcbf':'#ebf8ff';
-        av.style.color=p.species==='cat'?'#744210':'#2c5282';
-        av.textContent=p.species==='cat'?'🐱':'🐶';
-        var info=document.createElement('div');
-        var nm=document.createElement('div');nm.className='pet-name';nm.textContent=p.name;
-        var dt=document.createElement('div');dt.className='pet-detail';
-        dt.textContent=locNames[p.current_location]||p.current_location;
-        info.appendChild(nm);info.appendChild(dt);
-        el.appendChild(av);el.appendChild(info);ps.appendChild(el);
-      });
-      rc.appendChild(ps);
-    }
-  }catch(e){}
-}
-
-// ── 访客 ──
-async function fetchVisitors(){
-  try{
-    var r=await fetch(BASE+'/api/v1/visitor/online');
-    var d=await r.json();
-    var vc=document.getElementById('visitors-container');
-    if(!d.visitors||d.visitors.length===0){vc.innerHTML='';return;}
-    vc.innerHTML='<div style="font-size:11px;color:var(--dim);margin-bottom:6px;border-top:1px solid #edf2f7;padding-top:8px">访客</div>';
-    d.visitors.forEach(function(v){
-      var el=document.createElement('div');el.className='person-row';
-      var av=document.createElement('div');av.className='person-avatar';
-      av.style.background='#f0fff4';av.style.color='#276749';
-      av.textContent=v.avatar_emoji||'🧑';av.style.fontSize='16px';
-      var info=document.createElement('div');
-      var nm=document.createElement('div');nm.className='person-name';nm.textContent=v.name;
-      var dt=document.createElement('div');dt.className='person-detail';
-      dt.textContent=locNames[v.current_location]||v.current_location;
-      info.appendChild(nm);info.appendChild(dt);
-      el.appendChild(av);el.appendChild(info);vc.appendChild(el);
+      info.innerHTML='<div class="p-name">'+esc(r.name)+' <span class="role-tag '+r.role+'">'+ROLE_NAMES[r.role]+'</span></div><div class="p-info">'+(locNames[r.current_location]||'未知')+' · '+(r.bio||'')+'</div>';
+      div.appendChild(av);div.appendChild(info);el.appendChild(div);
     });
   }catch(e){}
 }
 
-// ── 管理操作 ──
-async function manualTick(){
-  log('触发 tick...');
-  try{
-    var r=await fetch(BASE+'/api/v1/admin/tick',{method:'POST'});
-    var d=await r.json();
-    log('tick #'+d.tick_number+' 完成');
-    refresh();
-  }catch(e){log('tick 失败');}
-}
-
-async function generateInvite(){
-  try{
-    var r=await fetch(BASE+'/api/v1/visitor/invite/create',{method:'POST'});
-    var d=await r.json();
-    showToast('邀请码: '+d.code);
-    log('新邀请码: '+d.code);
-    if(document.getElementById('invite-panel').style.display!=='none')loadInvites();
-  }catch(e){showToast('生成失败');}
-}
-
-function toggleInvitePanel(){
-  var p=document.getElementById('invite-panel');
-  if(p.style.display==='none'){p.style.display='';loadInvites();}
-  else p.style.display='none';
-}
-
-async function loadInvites(){
-  try{
-    var r=await fetch(BASE+'/api/v1/visitor/invite/list');
-    var d=await r.json();
-    var el=document.getElementById('invite-list');
-    if(!d.codes||d.codes.length===0){el.innerHTML='<div style="font-size:12px;color:var(--dim)">还没有邀请码</div>';return;}
+async function fetchOnline(){
+  try{var d=await api('GET','/visitor/online');
+    var el=document.getElementById('visitors-c');
+    if(!d.visitors||d.visitors.length===0){el.innerHTML='<div class="empty">暂无访客在线</div>';return}
     el.innerHTML='';
-    d.codes.forEach(function(c){
-      var row=document.createElement('div');row.className='invite-code-item';
-      row.innerHTML='<span class="invite-code-val">'+c.code+'</span><span class="invite-code-usage">'+c.used_count+'/'+c.max_uses+'</span>';
-      el.appendChild(row);
+    d.visitors.forEach(function(v){
+      var div=document.createElement('div');div.className='person';
+      var av=document.createElement('div');av.className='p-av';av.textContent=v.avatar_emoji||'🧑';av.style.background='#f0fff4';
+      var info=document.createElement('div');
+      info.innerHTML='<div class="p-name">'+esc(v.name)+'</div><div class="p-info">'+(locNames[v.current_location]||'')+'</div>';
+      div.appendChild(av);div.appendChild(info);el.appendChild(div);
     });
   }catch(e){}
 }
 
-// ── 工具 ──
-function log(msg){
-  var el=document.getElementById('log');
-  var d=document.createElement('div');d.className='log-entry';
-  d.textContent=new Date().toLocaleTimeString()+' '+msg;
-  el.insertBefore(d,el.firstChild);
-  if(el.children.length>8)el.removeChild(el.lastChild);
+/* ── PROFILE ── */
+async function loadProfile(){
+  var pc=document.getElementById('profile-card');
+  pc.innerHTML='<div class="profile-av">'+esc(S.avatar||'🏠')+'</div><div class="profile-name">'+esc(S.name)+'</div><div class="profile-role">'+ROLE_NAMES[S.role]+' · '+(locNames[S.location]||'')+'</div>';
+  if(S.type==='resident'){
+    try{var d=await api('GET','/visitor/residents');
+      var me=d.residents.find(function(r){return r.id===S.id});
+      if(me&&me.bio)pc.innerHTML+='<div class="profile-bio">'+esc(me.bio)+'</div>';
+      document.getElementById('profile-edit-card').style.display='';
+      document.getElementById('pe-bio').value=me?me.bio||'':'';
+      document.getElementById('pe-avatar').value=S.avatar||'';
+      // 自己的房子
+      var home=null;
+      Object.values(locData).forEach(function(l){if(l.type==='private'&&l.description){
+        // check ownership (by owner_id field in the location)
+        // we don't have owner_id in map response, so use a heuristic
+      }});
+      // Try to find own home
+      var homeId=me?me.home_id:null;
+      if(homeId&&locData[homeId]){
+        document.getElementById('my-home-card').style.display='';
+        document.getElementById('mh-name').value=locData[homeId].name||'';
+        document.getElementById('mh-desc').value=locData[homeId].description||'';
+        document.getElementById('my-home-card').dataset.locId=homeId;
+      }
+    }catch(e){}
+  }else{
+    document.getElementById('profile-edit-card').style.display='none';
+    document.getElementById('my-home-card').style.display='none';
+  }
 }
 
-function showToast(msg){
-  var t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},2200);
+async function saveProfile(){
+  var bio=document.getElementById('pe-bio').value,av=document.getElementById('pe-avatar').value,pass=document.getElementById('pe-pass').value;
+  var err=document.getElementById('err-pe');err.textContent='';
+  var body={};if(bio!==undefined)body.bio=bio;if(av)body.avatar_emoji=av;if(pass)body.password=pass;
+  try{await api('PUT','/visitor/profile',body);S.avatar=av||S.avatar;save();toast('已保存');loadProfile()}catch(e){err.textContent=e.message}
 }
+
+async function saveMyHome(){
+  var locId=document.getElementById('my-home-card').dataset.locId;
+  var name=document.getElementById('mh-name').value.trim(),desc=document.getElementById('mh-desc').value.trim();
+  var err=document.getElementById('err-mh');err.textContent='';
+  try{await api('PUT','/visitor/location/'+locId,{name:name||undefined,desc_default:desc||undefined});toast('已保存');fetchMap()}catch(e){err.textContent=e.message}
+}
+
+/* ── ADMIN ── */
+async function loadAdmin(){
+  // invites
+  try{var d=await api('GET','/visitor/invite/list');
+    var el=document.getElementById('invite-list');
+    if(!d.codes||d.codes.length===0){el.innerHTML='<div class="empty">还没有邀请码</div>';return}
+    el.innerHTML='';d.codes.forEach(function(c){
+      var r=document.createElement('div');r.className='invite-row';
+      r.innerHTML='<span class="invite-code">'+c.code+'</span><span class="invite-usage">'+c.used_count+'/'+(c.max_uses===0?'∞':c.max_uses)+'</span>';
+      el.appendChild(r);
+    });
+  }catch(e){}
+  // resident passwords (owner only)
+  if(S.role==='owner'){
+    try{var d=await api('GET','/visitor/residents');
+      var el=document.getElementById('pw-list');el.innerHTML='';
+      d.residents.forEach(function(r){
+        var row=document.createElement('div');row.className='pw-row';
+        row.innerHTML='<span class="pw-name">'+esc(r.name)+'</span><span class="pw-role">'+ROLE_NAMES[r.role]+'</span>';
+        el.appendChild(row);
+      });
+    }catch(e){}
+  }
+}
+
+async function genInvite(max){
+  try{var r=await api('POST','/visitor/invite/create?max_uses='+max);toast('邀请码: '+r.code);loadAdmin()}catch(e){toast(e.message)}
+}
+
+async function manualTick(){
+  try{var r=await fetch(B+'/api/v1/admin/tick',{method:'POST'});var d=await r.json();
+    var el=document.getElementById('admin-log');el.textContent='tick #'+(d.tick_number||'?')+' 完成 '+new Date().toLocaleTimeString();
+    refresh();
+  }catch(e){toast('tick失败')}
+}
+
+/* ── UTILS ── */
+function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function roleTag(type,id){
+  // determine role from known residents
+  if(id==='yinyin')return'<span class="role-tag owner">社区主</span>';
+  if(id==='shen_yanqing'||id==='kebao')return'<span class="role-tag admin">管理员</span>';
+  if(type==='resident')return'<span class="role-tag resident">居民</span>';
+  return'';
+}
+function timeAgo(t){if(!t)return'';try{var d=new Date(t),n=Date.now(),m=Math.floor((n-d)/60000);if(m<1)return'刚刚';if(m<60)return m+'分钟前';var h=Math.floor(m/60);if(h<24)return h+'小时前';var dy=Math.floor(h/24);if(dy<30)return dy+'天前';return t.substring(0,10)}catch(e){return t?t.substring(0,10):''}}
+function fmtTime(t){if(!t)return'';return t.substring(0,16).replace('T',' ')}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2200)}
 </script>
 </body>
 </html>

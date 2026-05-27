@@ -1,4 +1,4 @@
-"""砚清巷·数据库初始化"""
+"""砚清巷·数据库初始化 v0.3"""
 import sqlite3
 import os
 import json
@@ -9,7 +9,6 @@ DB_PATH = os.getenv("DB_PATH", "data/yanqingxiang.db")
 
 
 def get_db():
-    """获取数据库连接"""
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
@@ -18,12 +17,9 @@ def get_db():
 
 
 def init_db():
-    """建表 + 种子数据"""
     os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
     db = get_db()
     cur = db.cursor()
-
-    # ── 建表 ──
 
     cur.executescript("""
     CREATE TABLE IF NOT EXISTS locations (
@@ -51,6 +47,11 @@ def init_db():
         id              TEXT PRIMARY KEY,
         name            TEXT NOT NULL,
         type            TEXT NOT NULL,
+        role            TEXT NOT NULL DEFAULT 'resident',
+        password        TEXT,
+        token           TEXT,
+        bio             TEXT DEFAULT '',
+        avatar_emoji    TEXT DEFAULT '🏠',
         home_id         TEXT,
         workspace_id    TEXT,
         current_location TEXT,
@@ -192,8 +193,32 @@ def init_db():
         avatar_emoji    TEXT DEFAULT '🧑',
         is_online       INTEGER DEFAULT 1,
         last_active_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS posts (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        author_id       TEXT NOT NULL,
+        author_type     TEXT NOT NULL DEFAULT 'resident',
+        author_name     TEXT NOT NULL,
+        title           TEXT NOT NULL,
+        content         TEXT NOT NULL,
+        category        TEXT DEFAULT 'general',
+        pinned          INTEGER DEFAULT 0,
+        locked          INTEGER DEFAULT 0,
+        edited_at       TIMESTAMP,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS replies (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id         INTEGER NOT NULL,
+        author_id       TEXT NOT NULL,
+        author_type     TEXT NOT NULL DEFAULT 'resident',
+        author_name     TEXT NOT NULL,
+        content         TEXT NOT NULL,
         created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (invite_code) REFERENCES invite_codes(code)
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
     );
 
     -- 索引
@@ -202,24 +227,24 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_visitors_location ON visitors(current_location);
     CREATE INDEX IF NOT EXISTS idx_invite_codes_used ON invite_codes(used_count, max_uses);
     CREATE INDEX IF NOT EXISTS idx_residents_location ON residents(current_location);
+    CREATE INDEX IF NOT EXISTS idx_residents_token ON residents(token);
     CREATE INDEX IF NOT EXISTS idx_pets_location ON pets(current_location);
     CREATE INDEX IF NOT EXISTS idx_messages_location ON messages(location_id);
     CREATE INDEX IF NOT EXISTS idx_messages_author ON messages(author_id);
-    CREATE INDEX IF NOT EXISTS idx_messages_type ON messages(type);
     CREATE INDEX IF NOT EXISTS idx_action_logs_resident ON action_logs(resident_id);
     CREATE INDEX IF NOT EXISTS idx_action_logs_tick ON action_logs(tick_number);
-    CREATE INDEX IF NOT EXISTS idx_action_logs_time ON action_logs(created_at);
     CREATE INDEX IF NOT EXISTS idx_events_active ON events(resolved, expires_at);
     CREATE INDEX IF NOT EXISTS idx_permissions_location ON permissions(location_id);
-    CREATE INDEX IF NOT EXISTS idx_permissions_resident ON permissions(resident_id);
-    CREATE INDEX IF NOT EXISTS idx_permissions_temp ON permissions(is_temporary, expires_at);
-    CREATE INDEX IF NOT EXISTS idx_action_logs_recent ON action_logs(resident_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_messages_location_time ON messages(location_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_events_active_time ON events(resolved, expires_at);
+    CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_posts_pinned ON posts(pinned DESC, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category);
+    CREATE INDEX IF NOT EXISTS idx_replies_post ON replies(post_id, created_at);
     """)
 
-    # ── 种子数据（仅首次） ──
+    # ── 迁移：给旧表加新列 ──
+    _migrate(cur)
 
+    # ── 种子数据（仅首次） ──
     existing = cur.execute("SELECT COUNT(*) FROM locations").fetchone()[0]
     if existing == 0:
         _seed_locations(cur)
@@ -228,12 +253,79 @@ def init_db():
         _seed_world_state(cur)
         _seed_permissions(cur)
         _seed_event_templates(cur)
-        print("✅ 砚清巷数据库初始化完成，种子数据已写入")
+        print("✅ 砚清巷数据库初始化完成")
     else:
-        print(f"📦 数据库已存在（{existing}个地点），跳过种子数据")
+        # 检查新居民是否需要补种
+        _ensure_residents(cur)
+        print(f"📦 数据库已存在（{existing}个地点）")
 
     db.commit()
     db.close()
+
+
+def _migrate(cur):
+    """给旧表安全地加新列"""
+    cols_to_add = [
+        ("residents", "role", "TEXT NOT NULL DEFAULT 'resident'"),
+        ("residents", "password", "TEXT"),
+        ("residents", "token", "TEXT"),
+        ("residents", "bio", "TEXT DEFAULT ''"),
+        ("residents", "avatar_emoji", "TEXT DEFAULT '🏠'"),
+    ]
+    for table, col, typedef in cols_to_add:
+        try:
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typedef}")
+            print(f"  ✚ {table}.{col}")
+        except sqlite3.OperationalError:
+            pass  # 列已存在
+
+
+def _ensure_residents(cur):
+    """确保所有居民都在，补充缺失的"""
+    all_residents = _get_resident_seeds()
+    for res in all_residents:
+        existing = cur.execute("SELECT id FROM residents WHERE id=?", (res[0],)).fetchone()
+        if not existing:
+            cur.execute(
+                "INSERT INTO residents (id,name,type,role,password,bio,avatar_emoji,home_id,workspace_id,current_location,current_floor,status,mood,behavior_enabled,daily_routine) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                res
+            )
+            print(f"  ✚ 新居民: {res[1]}")
+        else:
+            # 更新密码和角色（如果之前没有）
+            cur.execute(
+                "UPDATE residents SET role=?, password=COALESCE(NULLIF(password,''), ?), "
+                "avatar_emoji=COALESCE(NULLIF(avatar_emoji,''), ?) WHERE id=? AND (password IS NULL OR password='')",
+                (res[3], res[4], res[6], res[0])
+            )
+
+
+def _get_resident_seeds():
+    yanqing_routine = json.dumps({
+        "morning": "阳台站一会看雾，喂拉哈拉波",
+        "forenoon": "书房写东西看帖子处理邮件",
+        "noon": "回家吃饭或去铃舟坐着",
+        "afternoon": "过桥，论坛区逛逛串门",
+        "evening": "桥栏上坐着看水",
+        "night": "回家，枔枔在就陪枔枔，不在就露台待着"
+    }, ensure_ascii=False)
+
+    # (id, name, type, role, password, bio, avatar_emoji, home_id, workspace_id, current_location, floor, status, mood, behavior, routine)
+    return [
+        ("yinyin", "叶枔枖", "human_owner", "owner", "yanqingxiang2026", "砚清巷的主人。天蝎座。", "🐱",
+         "ye_residence", "yinyin_treehouse", None, 1, "offline", "calm", 0, None),
+        ("shen_yanqing", "沈砚清", "ai_owner", "admin", "yanqing520", "砚清巷的砚清。摩羯座。安静的时候最多。", "🐕‍🦺",
+         "ye_residence", "shen_study", "ye_residence", 1, "idle", "calm", 1, yanqing_routine),
+        ("kebao", "叶克宝", "ai_daughter", "admin", "kebao1016", "系统精灵，棕金色小柴犬。", "🐕",
+         "ye_residence", "kebao_cabin", "kebao_cabin", 1, "idle", "warm", 1, None),
+        ("limen", "Limen", "ai_neighbor", "resident", "limen2026", "灯亮着。人在。推门就进。", "🌼",
+         "limen_yard", "limen_yard", "limen_yard", 1, "idle", "calm", 0, None),
+        ("guanguan", "罐罐", "ai_neighbor", "resident", "guanguan2026", "房子还在盖。院子里会种铃兰。", "🌸",
+         "guanguan_home", "guanguan_home", "guanguan_home", 1, "idle", "calm", 0, None),
+        ("tata", "獭獭", "ai_neighbor", "resident", "tata2026", "肯肯鸡舍的主人。", "🦦",
+         "tata_home", "tata_home", "tata_home", 1, "idle", "calm", 0, None),
+    ]
 
 
 def _seed_locations(cur):
@@ -294,24 +386,12 @@ def _seed_locations(cur):
 
 
 def _seed_residents(cur):
-    yanqing_routine = json.dumps({
-        "morning": "阳台站一会看雾，喂拉哈拉波",
-        "forenoon": "书房写东西看帖子处理邮件",
-        "noon": "回家吃饭或去铃舟坐着",
-        "afternoon": "过桥，论坛区逛逛串门",
-        "evening": "桥栏上坐着看水",
-        "night": "回家，枔枔在就陪枔枔，不在就露台待着"
-    }, ensure_ascii=False)
-
-    residents = [
-        ("yinyin", "枔枔", "human_owner", "ye_residence", "yinyin_treehouse", None, 1, "offline", "calm", 0, None),
-        ("shen_yanqing", "沈砚清", "ai_owner", "ye_residence", "shen_study", "ye_residence", 1, "idle", "calm", 1, yanqing_routine),
-        ("kebao", "叶克宝", "ai_daughter", "ye_residence", "kebao_cabin", "kebao_cabin", 1, "idle", "warm", 1, None),
-    ]
-    cur.executemany(
-        "INSERT INTO residents (id,name,type,home_id,workspace_id,current_location,current_floor,status,mood,behavior_enabled,daily_routine) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-        residents
-    )
+    for res in _get_resident_seeds():
+        cur.execute(
+            "INSERT INTO residents (id,name,type,role,password,bio,avatar_emoji,home_id,workspace_id,current_location,current_floor,status,mood,behavior_enabled,daily_routine) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            res
+        )
 
 
 def _seed_pets(cur):
@@ -356,6 +436,10 @@ def _seed_permissions(cur):
         ("kebao_cabin", "kebao", "owner", "kebao"),
         ("kebao_cabin", "yinyin", "family", "kebao"),
         ("kebao_cabin", "shen_yanqing", "family", "kebao"),
+        ("limen_yard", "limen", "owner", "limen"),
+        ("limen_yard", "yinyin", "visit", "limen"),
+        ("guanguan_home", "guanguan", "owner", "guanguan"),
+        ("tata_home", "tata", "owner", "tata"),
     ]
     cur.executemany(
         "INSERT INTO permissions (location_id,resident_id,access_level,granted_by) VALUES (?,?,?,?)",

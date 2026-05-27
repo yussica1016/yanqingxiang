@@ -9,7 +9,7 @@ import yaml
 import os
 
 from database import init_db, get_db
-from routers import world, residents, admin, visitor
+from routers import world, residents, admin, visitor, forum
 from mcp_server import mcp as mcp_app
 
 
@@ -73,6 +73,7 @@ app.include_router(world.router, prefix="/api/v1/world", tags=["世界"])
 app.include_router(residents.router, prefix="/api/v1/residents", tags=["居民"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["管理"])
 app.include_router(visitor.router, prefix="/api/v1/visitor", tags=["访客"])
+app.include_router(forum.router, prefix="/api/v1/forum", tags=["论坛"])
 
 # ── MCP Server（克宝接入口）──
 app.mount("/mcp", mcp_app.sse_app(mount_path="/mcp"))
