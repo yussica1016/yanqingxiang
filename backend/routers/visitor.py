@@ -34,8 +34,26 @@ class EditProfileRequest(BaseModel):
     password: Optional[str] = None
 
 class EditLocationRequest(BaseModel):
-    desc_default: Optional[str] = None
     name: Optional[str] = None
+    desc_default: Optional[str] = None
+    desc_morning: Optional[str] = None
+    desc_night: Optional[str] = None
+    desc_rain: Optional[str] = None
+    desc_autumn: Optional[str] = None
+    floors: Optional[int] = None
+    has_basement: Optional[bool] = None
+    has_garden: Optional[bool] = None
+    has_pool: Optional[bool] = None
+    interactables: Optional[str] = None
+
+
+class CreateLandRequest(BaseModel):
+    """管理员给居民分配地皮"""
+    land_id: str          # 地点id，英文下划线
+    land_name: str        # 显示名
+    owner_id: str         # 分配给谁
+    zone: str = "other_side"
+    connect_to: str = "neighbor_area"  # 连通到哪个已有地点
 
 
 # ── 统一鉴权 ──
@@ -72,8 +90,8 @@ def resident_login(req: ResidentLoginRequest):
 
         db.execute("UPDATE residents SET token=?, last_action_at=? WHERE id=?", (token, now, r["id"]))
 
-        # 如果是owner（枔枔），同步更新world_state
-        if r["role"] == "owner":
+        # 枔枔上线同步world_state
+        if r["id"] == "yinyin":
             loc = r["current_location"] or "ye_residence"
             db.execute(
                 "UPDATE world_state SET yinyin_online=1, yinyin_location=?, yinyin_last_seen=? WHERE id=1",
@@ -87,7 +105,7 @@ def resident_login(req: ResidentLoginRequest):
             "name": r["name"],
             "role": r["role"],
             "token": token,
-            "location": r["current_location"] or (r["home_id"] if r["role"] != "owner" else "ye_residence"),
+            "location": r["current_location"] or r["home_id"] or "ye_residence",
             "avatar": r["avatar_emoji"],
             "bio": r["bio"],
         }
@@ -151,7 +169,7 @@ def restore_session(x_auth_token: str = Header(alias="X-Auth-Token")):
         if auth["type"] == "resident":
             r = db.execute("SELECT current_location, home_id, role, bio FROM residents WHERE id=?", (auth["id"],)).fetchone()
             loc = r["current_location"] or r["home_id"]
-            if r["role"] == "owner":
+            if auth["id"] == "yinyin":
                 db.execute("UPDATE world_state SET yinyin_online=1, yinyin_last_seen=? WHERE id=1", (now,))
                 db.commit()
             return {**auth, "location": loc, "bio": r["bio"]}
@@ -209,7 +227,7 @@ def do_move(req: MoveRequest, x_auth_token: str = Header(alias="X-Auth-Token")):
         if auth["type"] == "resident":
             db.execute("UPDATE residents SET current_location=?, last_action_at=? WHERE id=?",
                        (req.location_id, now, auth["id"]))
-            if auth["role"] == "owner":
+            if auth["id"] == "yinyin":
                 db.execute("UPDATE world_state SET yinyin_location=?, yinyin_last_seen=? WHERE id=1",
                            (req.location_id, now))
         else:
@@ -232,7 +250,7 @@ def do_logout(x_auth_token: str = Header(alias="X-Auth-Token")):
         auth = get_auth(x_auth_token, db)
         now = datetime.now(MSK).isoformat()
         if auth["type"] == "resident":
-            if auth["role"] == "owner":
+            if auth["id"] == "yinyin":
                 db.execute("UPDATE world_state SET yinyin_online=0, yinyin_last_seen=? WHERE id=1", (now,))
             db.execute("UPDATE residents SET token=NULL, last_action_at=? WHERE id=?", (now, auth["id"]))
         else:
@@ -303,12 +321,98 @@ def edit_own_location(location_id: str, req: EditLocationRequest, x_auth_token: 
             if not req.name.strip() or len(req.name) > 30:
                 raise HTTPException(status_code=400, detail="地点名1-30字")
             updates.append("name=?"); params.append(req.name.strip())
+        for field in ("desc_morning", "desc_night", "desc_rain", "desc_autumn"):
+            val = getattr(req, field, None)
+            if val is not None:
+                if len(val) > 500:
+                    raise HTTPException(status_code=400, detail=f"{field}最多500字")
+                updates.append(f"{field}=?"); params.append(val)
+        if req.floors is not None:
+            if req.floors < 1 or req.floors > 5:
+                raise HTTPException(status_code=400, detail="楼层1-5")
+            updates.append("floors=?"); params.append(req.floors)
+        if req.has_basement is not None:
+            updates.append("has_basement=?"); params.append(1 if req.has_basement else 0)
+        if req.has_garden is not None:
+            updates.append("has_garden=?"); params.append(1 if req.has_garden else 0)
+        if req.has_pool is not None:
+            updates.append("has_pool=?"); params.append(1 if req.has_pool else 0)
+        if req.interactables is not None:
+            if len(req.interactables) > 1000:
+                raise HTTPException(status_code=400, detail="interactables最多1000字")
+            updates.append("interactables=?"); params.append(req.interactables)
         if not updates:
             return {"updated": False}
         params.append(location_id)
         db.execute(f"UPDATE locations SET {','.join(updates)} WHERE id=?", params)
         db.commit()
         return {"updated": True}
+    finally:
+        db.close()
+
+
+# ═══ 分配地皮（admin+创建新地点给居民） ═══
+
+@router.post("/land/create")
+def create_land(req: CreateLandRequest, x_auth_token: str = Header(alias="X-Auth-Token")):
+    db = get_db()
+    try:
+        auth = get_auth(x_auth_token, db)
+        if auth["role"] not in ("owner", "admin"):
+            raise HTTPException(status_code=403, detail="只有管理员能分配地皮")
+
+        # 检查id合法
+        if not req.land_id or not req.land_id.replace("_", "").isalnum():
+            raise HTTPException(status_code=400, detail="地点id只能用英文字母数字下划线")
+        if len(req.land_id) > 30:
+            raise HTTPException(status_code=400, detail="地点id最多30字符")
+        if db.execute("SELECT id FROM locations WHERE id=?", (req.land_id,)).fetchone():
+            raise HTTPException(status_code=400, detail="这个id已经有地方了")
+
+        # 检查分配对象存在
+        target = db.execute("SELECT id, name FROM residents WHERE id=?", (req.owner_id,)).fetchone()
+        if not target:
+            raise HTTPException(status_code=404, detail="找不到这个居民")
+
+        # 检查连通的地点存在
+        connect = db.execute("SELECT id, connections FROM locations WHERE id=?", (req.connect_to,)).fetchone()
+        if not connect:
+            raise HTTPException(status_code=404, detail="连通地点不存在")
+
+        name = req.land_name.strip()
+        if not name or len(name) > 30:
+            raise HTTPException(status_code=400, detail="地点名1-30字")
+
+        # 创建地点
+        connections = json.dumps([req.connect_to])
+        db.execute(
+            "INSERT INTO locations (id, name, zone, type, owner_id, floors, desc_default, connections) "
+            "VALUES (?, ?, ?, 'private', ?, 1, '刚划好的地，等主人来装修。', ?)",
+            (req.land_id, name, req.zone, req.owner_id, connections)
+        )
+
+        # 更新连通地点的connections，加上新地点
+        old_conns = json.loads(connect["connections"])
+        old_conns.append(req.land_id)
+        db.execute("UPDATE locations SET connections=? WHERE id=?", (json.dumps(old_conns), req.connect_to))
+
+        # 添加owner权限
+        db.execute(
+            "INSERT INTO permissions (location_id, resident_id, access_level, granted_by) VALUES (?, ?, 'owner', ?)",
+            (req.land_id, req.owner_id, auth["id"])
+        )
+
+        # 更新居民home_id
+        db.execute("UPDATE residents SET home_id=? WHERE id=? AND home_id IS NULL", (req.land_id, req.owner_id))
+
+        db.commit()
+        return {
+            "created": True,
+            "land_id": req.land_id,
+            "name": name,
+            "owner": target["name"],
+            "connected_to": req.connect_to,
+        }
     finally:
         db.close()
 

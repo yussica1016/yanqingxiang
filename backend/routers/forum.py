@@ -67,8 +67,10 @@ def list_posts(
 
         posts = db.execute(
             f"SELECT p.*, "
-            f"(SELECT COUNT(*) FROM replies r WHERE r.post_id=p.id) as reply_count "
-            f"FROM posts p {where} "
+            f"(SELECT COUNT(*) FROM replies r WHERE r.post_id=p.id) as reply_count, "
+            f"COALESCE(res.role, 'visitor') as author_role "
+            f"FROM posts p LEFT JOIN residents res ON p.author_id=res.id "
+            f"{where} "
             f"ORDER BY p.pinned DESC, p.created_at DESC LIMIT ? OFFSET ?",
             params + [size, offset]
         ).fetchall()
@@ -90,11 +92,17 @@ def list_posts(
 def get_post(post_id: int):
     db = get_db()
     try:
-        post = db.execute("SELECT * FROM posts WHERE id=?", (post_id,)).fetchone()
+        post = db.execute(
+            "SELECT p.*, COALESCE(res.role, 'visitor') as author_role "
+            "FROM posts p LEFT JOIN residents res ON p.author_id=res.id WHERE p.id=?",
+            (post_id,)
+        ).fetchone()
         if not post:
             raise HTTPException(status_code=404, detail="帖子不存在")
         replies = db.execute(
-            "SELECT * FROM replies WHERE post_id=? ORDER BY created_at ASC",
+            "SELECT r.*, COALESCE(res.role, 'visitor') as author_role "
+            "FROM replies r LEFT JOIN residents res ON r.author_id=res.id "
+            "WHERE r.post_id=? ORDER BY r.created_at ASC",
             (post_id,)
         ).fetchall()
         return {

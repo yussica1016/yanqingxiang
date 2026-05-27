@@ -280,6 +280,15 @@ a{color:var(--blue);text-decoration:none}
       <div class="password-list" id="pw-list"></div>
     </div>
     <div class="card admin-section">
+      <div class="card-t">🏗️ 分配地皮</div>
+      <div class="field"><label>地点ID（英文）</label><input id="land-id" placeholder="如 xiaoming_home" maxlength="30"></div>
+      <div class="field"><label>地点名</label><input id="land-name" placeholder="如 小明的家" maxlength="30"></div>
+      <div class="field"><label>分配给（居民id）</label><input id="land-owner" placeholder="如 limen"></div>
+      <div class="field"><label>连通到</label><input id="land-connect" value="neighbor_area"></div>
+      <button class="btn-a" onclick="createLand()">分配</button>
+      <div class="err" id="err-land"></div>
+    </div>
+    <div class="card admin-section">
       <div class="card-t">⏱️ 世界操作</div>
       <div style="display:flex;gap:8px">
         <button class="btn-a" onclick="manualTick()">手动tick</button>
@@ -289,7 +298,7 @@ a{color:var(--blue);text-decoration:none}
     </div>
   </div>
 
-  <div class="footer">砚清巷 v0.3.0</div>
+  <div class="footer">砚清巷 v0.3.1</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -297,7 +306,7 @@ a{color:var(--blue);text-decoration:none}
 var B='',S={token:null,id:null,name:null,role:null,location:null,avatar:null,type:null};
 var locData={},locNames={};
 var CATS={general:'闲聊',notice:'公告',request:'许愿',story:'故事',build:'建设',chat:'对话'};
-var ROLE_NAMES={owner:'社区主',admin:'管理员',resident:'居民',visitor:'访客'};
+var ROLE_NAMES={owner:'巷主',admin:'管理员',resident:'居民',visitor:'访客'};
 var AVATARS=["🧑","👤","🐱","🐶","🌸","🍃","🌙","⭐","🎵","🦊","🐰","🐻","🌻","🍀","🎐"];
 var W={clear:'☀️晴',cloudy:'⛅多云',overcast:'☁️阴',light_rain:'🌧️雨',heavy_rain:'🌧️大雨',fog:'🌫️雾',wind:'💨风'};
 var SS={spring:'🌸春',summer:'☀️夏',autumn:'🍂秋',winter:'❄️冬'};
@@ -418,7 +427,7 @@ async function loadPosts(){
       if(p.category==='notice'){var b=document.createElement('span');b.className='post-badge notice';b.textContent='公告';tr.appendChild(b)}
       var t=document.createElement('span');t.className='post-title';t.textContent=p.title;tr.appendChild(t);
       var m=document.createElement('div');m.className='post-meta';
-      m.innerHTML='<span class="author">'+esc(p.author_name)+'</span>'+roleTag(p.author_type,p.author_id)+' · '+(CATS[p.category]||p.category)+' · '+(p.reply_count||0)+'回复 · '+timeAgo(p.created_at);
+      m.innerHTML='<span class="author">'+esc(p.author_name)+'</span>'+roleTag(p.author_role)+' · '+(CATS[p.category]||p.category)+' · '+(p.reply_count||0)+'回复 · '+timeAgo(p.created_at);
       div.appendChild(tr);div.appendChild(m);
       div.onclick=function(){openPost(p.id)};
       el.appendChild(div);
@@ -441,7 +450,7 @@ async function openPost(id){
     if(p.pinned)html+='<span class="post-badge pinned">置顶</span>';
     if(p.locked)html+='<span class="post-badge locked">锁定</span>';
     html+='<span class="post-title" style="font-size:18px">'+esc(p.title)+'</span></div>';
-    html+='<div class="post-meta" style="margin-top:4px"><span class="author">'+esc(p.author_name)+'</span>'+roleTag(p.author_type,p.author_id)+' · '+(CATS[p.category]||p.category)+' · '+fmtTime(p.created_at);
+    html+='<div class="post-meta" style="margin-top:4px"><span class="author">'+esc(p.author_name)+'</span>'+roleTag(p.author_role)+' · '+(CATS[p.category]||p.category)+' · '+fmtTime(p.created_at);
     if(p.edited_at)html+=' · 已编辑';
     html+='</div>';
     html+='<div class="post-body">'+esc(p.content)+'</div>';
@@ -455,7 +464,7 @@ async function openPost(id){
     // replies
     html+='<div style="font-size:13px;color:var(--blue);font-weight:500;margin-bottom:8px">回复 ('+reps.length+')</div>';
     reps.forEach(function(r){
-      html+='<div class="reply-item"><span class="reply-author">'+esc(r.author_name)+'</span>'+roleTag(r.author_type,r.author_id)+'<span class="reply-time">'+fmtTime(r.created_at)+'</span><div class="reply-body">'+esc(r.content)+'</div></div>';
+      html+='<div class="reply-item"><span class="reply-author">'+esc(r.author_name)+'</span>'+roleTag(r.author_role)+'<span class="reply-time">'+fmtTime(r.created_at)+'</span><div class="reply-body">'+esc(r.content)+'</div></div>';
     });
     if(!p.locked){
       html+='<div class="reply-form"><div class="field"><textarea id="reply-text" rows="3" placeholder="写点什么..."></textarea></div><button class="btn-primary" style="width:auto;padding:8px 20px" onclick="submitReply('+p.id+')">回复</button></div>';
@@ -654,8 +663,8 @@ async function loadAdmin(){
       el.appendChild(r);
     });
   }catch(e){}
-  // resident passwords (owner only)
-  if(S.role==='owner'){
+  // resident list (owner+admin)
+  if(S.role==='owner'||S.role==='admin'){
     try{var d=await api('GET','/visitor/residents');
       var el=document.getElementById('pw-list');el.innerHTML='';
       d.residents.forEach(function(r){
@@ -671,6 +680,18 @@ async function genInvite(max){
   try{var r=await api('POST','/visitor/invite/create?max_uses='+max);toast('邀请码: '+r.code);loadAdmin()}catch(e){toast(e.message)}
 }
 
+async function createLand(){
+  var id=document.getElementById('land-id').value.trim(),name=document.getElementById('land-name').value.trim();
+  var owner=document.getElementById('land-owner').value.trim(),conn=document.getElementById('land-connect').value.trim();
+  var err=document.getElementById('err-land');err.textContent='';
+  if(!id||!name||!owner){err.textContent='填完';return}
+  try{var r=await api('POST','/visitor/land/create',{land_id:id,land_name:name,owner_id:owner,connect_to:conn||'neighbor_area'});
+    toast('已分配: '+r.name+' → '+r.owner);
+    document.getElementById('land-id').value='';document.getElementById('land-name').value='';document.getElementById('land-owner').value='';
+    fetchMap();
+  }catch(e){err.textContent=e.message}
+}
+
 async function manualTick(){
   try{var r=await fetch(B+'/api/v1/admin/tick',{method:'POST'});var d=await r.json();
     var el=document.getElementById('admin-log');el.textContent='tick #'+(d.tick_number||'?')+' 完成 '+new Date().toLocaleTimeString();
@@ -680,12 +701,10 @@ async function manualTick(){
 
 /* ── UTILS ── */
 function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function roleTag(type,id){
-  // determine role from known residents
-  if(id==='yinyin')return'<span class="role-tag owner">社区主</span>';
-  if(id==='shen_yanqing'||id==='kebao')return'<span class="role-tag admin">管理员</span>';
-  if(type==='resident')return'<span class="role-tag resident">居民</span>';
-  return'';
+function roleTag(role){
+  if(!role||role==='visitor')return'';
+  var n=ROLE_NAMES[role]||role;
+  return'<span class="role-tag '+role+'">'+n+'</span>';
 }
 function timeAgo(t){if(!t)return'';try{var d=new Date(t),n=Date.now(),m=Math.floor((n-d)/60000);if(m<1)return'刚刚';if(m<60)return m+'分钟前';var h=Math.floor(m/60);if(h<24)return h+'小时前';var dy=Math.floor(h/24);if(dy<30)return dy+'天前';return t.substring(0,10)}catch(e){return t?t.substring(0,10):''}}
 function fmtTime(t){if(!t)return'';return t.substring(0,16).replace('T',' ')}

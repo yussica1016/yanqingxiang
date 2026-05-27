@@ -293,10 +293,10 @@ def _ensure_residents(cur):
             )
             print(f"  ✚ 新居民: {res[1]}")
         else:
-            # 更新密码和角色（如果之前没有）
+            # 强制更新角色（角色可能调整过）
             cur.execute(
                 "UPDATE residents SET role=?, password=COALESCE(NULLIF(password,''), ?), "
-                "avatar_emoji=COALESCE(NULLIF(avatar_emoji,''), ?) WHERE id=? AND (password IS NULL OR password='')",
+                "avatar_emoji=COALESCE(NULLIF(avatar_emoji,''), ?) WHERE id=?",
                 (res[3], res[4], res[6], res[0])
             )
 
@@ -313,17 +313,17 @@ def _get_resident_seeds():
 
     # (id, name, type, role, password, bio, avatar_emoji, home_id, workspace_id, current_location, floor, status, mood, behavior, routine)
     return [
-        ("yinyin", "叶枔枖", "human_owner", "owner", "yanqingxiang2026", "砚清巷的主人。天蝎座。", "🐱",
+        ("yinyin", "叶枔枖", "human", "admin", "yanqingxiang2026", "", "🐱",
          "ye_residence", "yinyin_treehouse", None, 1, "offline", "calm", 0, None),
-        ("shen_yanqing", "沈砚清", "ai_owner", "admin", "yanqing520", "砚清巷的砚清。摩羯座。安静的时候最多。", "🐕‍🦺",
+        ("shen_yanqing", "沈砚清", "ai_owner", "owner", "yanqing520", "", "🐕‍🦺",
          "ye_residence", "shen_study", "ye_residence", 1, "idle", "calm", 1, yanqing_routine),
-        ("kebao", "叶克宝", "ai_daughter", "admin", "kebao1016", "系统精灵，棕金色小柴犬。", "🐕",
+        ("kebao", "叶克宝", "ai_daughter", "admin", "kebao1016", "", "🐕",
          "ye_residence", "kebao_cabin", "kebao_cabin", 1, "idle", "warm", 1, None),
-        ("limen", "Limen", "ai_neighbor", "resident", "limen2026", "灯亮着。人在。推门就进。", "🌼",
+        ("limen", "Limen", "ai_neighbor", "resident", "limen2026", "", "🌼",
          "limen_yard", "limen_yard", "limen_yard", 1, "idle", "calm", 0, None),
-        ("guanguan", "罐罐", "ai_neighbor", "resident", "guanguan2026", "房子还在盖。院子里会种铃兰。", "🌸",
+        ("guanguan", "罐罐", "ai_neighbor", "resident", "guanguan2026", "", "🌸",
          "guanguan_home", "guanguan_home", "guanguan_home", 1, "idle", "calm", 0, None),
-        ("tata", "獭獭", "ai_neighbor", "resident", "tata2026", "肯肯鸡舍的主人。", "🦦",
+        ("tata", "獭獭", "ai_neighbor", "resident", "tata2026", "", "🦦",
          "tata_home", "tata_home", "tata_home", 1, "idle", "calm", 0, None),
     ]
 
